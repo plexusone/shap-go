@@ -219,7 +219,7 @@ func (e *Explainer) computeSHAPValuesParallel(ctx context.Context, instance []fl
 		go func(numSamples int, seed int64) {
 			defer wg.Done()
 
-			workerRNG := rand.New(rand.NewSource(seed))
+			workerRNG := rand.New(rand.NewSource(seed)) //nolint:gosec // seeded for reproducibility
 			values := make([]float64, numFeatures)
 
 			for sample := 0; sample < numSamples; sample++ {

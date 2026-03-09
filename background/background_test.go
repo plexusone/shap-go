@@ -76,7 +76,7 @@ func TestDataset_Sample(t *testing.T) {
 	}
 	ds, _ := NewDatasetFromSlice(data)
 
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic for testing
 	sample := ds.Sample(rng)
 
 	if len(sample) != 2 {
@@ -98,7 +98,7 @@ func TestDataset_SampleN(t *testing.T) {
 	}
 	ds, _ := NewDatasetFromSlice(data)
 
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic for testing
 	samples := ds.SampleN(rng, 5)
 
 	if len(samples) != 5 {
@@ -140,7 +140,7 @@ func TestDataset_RandomSubset(t *testing.T) {
 	}
 	ds, _ := NewDatasetFromSlice(data)
 
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic for testing
 	subset := ds.RandomSubset(rng, 3)
 
 	if subset.NumSamples() != 3 {
@@ -242,7 +242,7 @@ func TestDataset_KMeansSummary(t *testing.T) {
 	}
 	ds, _ := NewDatasetFromSlice(data)
 
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // seeded for reproducible tests
 	summary := ds.KMeansSummary(2, 100, rng)
 
 	if summary.NumSamples() != 2 {

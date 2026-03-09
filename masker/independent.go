@@ -36,7 +36,7 @@ func NewIndependentMasker(background [][]float64) (*IndependentMasker, error) {
 	return &IndependentMasker{
 		background:  background,
 		numFeatures: numFeatures,
-		rng:         rand.New(rand.NewSource(rand.Int63())),
+		rng:         rand.New(rand.NewSource(rand.Int63())), //nolint:gosec // crypto not needed for sampling
 	}, nil
 }
 
@@ -46,7 +46,7 @@ func NewIndependentMaskerWithSeed(background [][]float64, seed int64) (*Independ
 	if err != nil {
 		return nil, err
 	}
-	masker.rng = rand.New(rand.NewSource(seed))
+	masker.rng = rand.New(rand.NewSource(seed)) //nolint:gosec // seeded for reproducibility
 	return masker, nil
 }
 

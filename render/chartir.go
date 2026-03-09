@@ -34,14 +34,14 @@ type Column struct {
 
 // Mark represents a visual mark (series) in the chart.
 type Mark struct {
-	ID        string  `json:"id"`
-	DatasetID string  `json:"datasetId"`
-	Geometry  string  `json:"geometry"` // "line", "bar", "scatter", "area"
-	Encode    Encode  `json:"encode"`
-	Stack     string  `json:"stack,omitempty"`
-	Style     *Style  `json:"style,omitempty"`
-	Name      string  `json:"name,omitempty"`
-	Smooth    bool    `json:"smooth,omitempty"`
+	ID        string `json:"id"`
+	DatasetID string `json:"datasetId"`
+	Geometry  string `json:"geometry"` // "line", "bar", "scatter", "area"
+	Encode    Encode `json:"encode"`
+	Stack     string `json:"stack,omitempty"`
+	Style     *Style `json:"style,omitempty"`
+	Name      string `json:"name,omitempty"`
+	Smooth    bool   `json:"smooth,omitempty"`
 }
 
 // Encode defines how data columns map to visual properties.
@@ -65,7 +65,7 @@ type Style struct {
 // Axis defines a chart axis.
 type Axis struct {
 	ID       string   `json:"id"`
-	Type     string   `json:"type"` // "category", "value", "time", "log"
+	Type     string   `json:"type"`     // "category", "value", "time", "log"
 	Position string   `json:"position"` // "bottom", "top", "left", "right"
 	Name     string   `json:"name,omitempty"`
 	Min      *float64 `json:"min,omitempty"`
@@ -373,9 +373,9 @@ func (r *Renderer) DependenceChartIR(es *ExplanationSet, featureName string, tit
 // ForceChartData generates data for a force plot (horizontal stacked bar).
 // This is a simplified representation suitable for custom rendering.
 type ForceChartData struct {
-	BaseValue   float64             `json:"base_value"`
-	Prediction  float64             `json:"prediction"`
-	Features    []ForceFeature      `json:"features"`
+	BaseValue  float64        `json:"base_value"`
+	Prediction float64        `json:"prediction"`
+	Features   []ForceFeature `json:"features"`
 }
 
 // ForceFeature represents a feature in a force plot.
@@ -417,4 +417,3 @@ func (r *Renderer) ForceChartData(exp *explanation.Explanation) *ForceChartData 
 		Features:   features,
 	}
 }
-

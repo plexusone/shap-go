@@ -58,7 +58,7 @@ func (c *Config) GetRNG() *rand.Rand {
 	} else {
 		seed = time.Now().UnixNano()
 	}
-	return rand.New(rand.NewSource(seed))
+	return rand.New(rand.NewSource(seed)) //nolint:gosec // seeded for reproducibility
 }
 
 // generateFeatureNames generates default feature names.
