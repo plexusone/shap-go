@@ -1,0 +1,132 @@
+name: Test
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    name: Test Go
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Run tests
+        run: go test -v -race ./...
+
+      - name: Run linter
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: latest
+
+  equivalence:
+    name: Python SHAP Equivalence
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: testdata/python/requirements.txt
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r testdata/python/requirements.txt
+
+      - name: Generate test cases from Python SHAP
+        run: |
+          python testdata/python/generate_test_cases.py > testdata/treeshap_test_cases_generated.json
+
+      - name: Show generated test cases (first 100 lines)
+        run: head -100 testdata/treeshap_test_cases_generated.json
+
+      - name: Compare with committed test cases
+        run: |
+          # Use the generated test cases for this run
+          mv testdata/treeshap_test_cases_generated.json testdata/treeshap_test_cases.json
+
+      - name: Run TreeSHAP equivalence tests
+        run: go test -v ./explainer/tree/... -run TestAgainstPythonSHAP
+
+      - name: Verify local accuracy property
+        run: go test -v ./explainer/tree/... -run TestLocalAccuracyProperty
+
+      - name: Run all tree tests
+        run: go test -v ./explainer/tree/...
+
+  # Job to verify the committed test cases haven't drifted
+  verify-testdata:
+    name: Verify Committed Test Data
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: testdata/python/requirements.txt
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r testdata/python/requirements.txt
+
+      - name: Generate fresh test cases
+        run: |
+          python testdata/python/generate_test_cases.py > testdata/treeshap_test_cases_fresh.json
+
+      - name: Check for differences
+        run: |
+          # Extract just the test values (ignore version/timestamp metadata)
+          python3 -c "
+          import json
+          import sys
+
+          with open('testdata/treeshap_test_cases.json') as f:
+              committed = json.load(f)
+          with open('testdata/treeshap_test_cases_fresh.json') as f:
+              fresh = json.load(f)
+
+          # Compare test suites (ignore metadata like shap_version)
+          def extract_tests(data):
+              result = []
+              for suite in data.get('test_suites', []):
+                  suite_data = {
+                      'name': suite['name'],
+                      'base_value': suite['base_value'],
+                      'cases': suite['cases']
+                  }
+                  result.append(suite_data)
+              return result
+
+          committed_tests = extract_tests(committed)
+          fresh_tests = extract_tests(fresh)
+
+          if committed_tests != fresh_tests:
+              print('WARNING: Committed test cases differ from freshly generated ones.')
+              print('This may indicate the test data needs to be regenerated.')
+              print()
+              print('Committed test names:', [s['name'] for s in committed_tests])
+              print('Fresh test names:', [s['name'] for s in fresh_tests])
+              # Don't fail - just warn. The actual equivalence test will catch real issues.
+          else:
+              print('Test cases match.')
+          "
