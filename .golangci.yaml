@@ -23,6 +23,11 @@ linters:
       - third_party$
       - builtin$
       - examples$
+    rules:
+      # Allow duplicate code in test files (common test setup patterns)
+      - linters:
+          - dupl
+        path: _test\.go$
   settings:
     staticcheck:
       checks:
