@@ -49,6 +49,50 @@ This guide will get you explaining model predictions in 5 minutes.
     }
     ```
 
+=== "Linear Models"
+
+    For linear or logistic regression, use **LinearSHAP** for exact, instant explanations.
+
+    ```go
+    package main
+
+    import (
+        "context"
+        "fmt"
+
+        "github.com/plexusone/shap-go/explainer"
+        "github.com/plexusone/shap-go/explainer/linear"
+    )
+
+    func main() {
+        // Model: f(x) = 10 + 2*x₀ + 3*x₁
+        weights := []float64{2.0, 3.0}
+        bias := 10.0
+
+        // Background data for computing E[x]
+        background := [][]float64{
+            {1.0, 2.0},
+            {3.0, 4.0},
+            {2.0, 3.0},
+        }
+
+        // Create explainer
+        exp, _ := linear.New(weights, bias, background,
+            explainer.WithFeatureNames([]string{"age", "income"}),
+        )
+
+        // Explain a prediction
+        ctx := context.Background()
+        explanation, _ := exp.Explain(ctx, []float64{5.0, 6.0})
+
+        fmt.Printf("Prediction: %.2f\n", explanation.Prediction)
+        fmt.Printf("Base Value: %.2f\n", explanation.BaseValue)
+        for _, f := range explanation.TopFeatures(2) {
+            fmt.Printf("SHAP[%s]: %.2f\n", f.Name, f.SHAPValue)
+        }
+    }
+    ```
+
 === "Any Model (Black-box)"
 
     For any model you can call, use **PermutationSHAP**.
@@ -160,6 +204,7 @@ loaded, _ := explanation.FromJSON(jsonData)
 ## Next Steps
 
 - [TreeSHAP Guide](../explainers/treeshap.md) - Deep dive into tree explanations
+- [LinearSHAP Guide](../explainers/linearshap.md) - Linear model explanations
 - [PermutationSHAP Guide](../explainers/permutation.md) - Black-box explanations
 - [Visualization](../visualization/charts.md) - Generate charts
 - [XGBoost Integration](../models/xgboost.md) - Export models from Python

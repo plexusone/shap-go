@@ -80,10 +80,10 @@ func main() {
 | Status | Explainer | Model Type | Notes |
 |:------:|-----------|------------|-------|
 | :white_check_mark: | **TreeSHAP** | Trees | Exact & fast (O(TLD²)) for XGBoost, LightGBM |
+| :white_check_mark: | **LinearSHAP** | Linear | Exact closed-form for linear/logistic regression |
 | :white_check_mark: | **PermutationSHAP** | Any | Black-box, guarantees local accuracy |
 | :white_check_mark: | **SamplingSHAP** | Any | Monte Carlo approximation, fast estimates |
 | :white_large_square: | KernelSHAP | Any | Weighted linear regression (planned) |
-| :white_large_square: | LinearSHAP | Linear | Exact closed-form (planned) |
 | :white_large_square: | DeepSHAP | Neural Nets | For deep learning (planned) |
 
 ## Getting Started
@@ -115,6 +115,14 @@ Ready to start explaining your models?
     Exact SHAP for XGBoost/LightGBM
 
     [:octicons-arrow-right-24: TreeSHAP guide](explainers/treeshap.md)
+
+-   :material-function:{ .lg .middle } **LinearSHAP**
+
+    ---
+
+    Exact SHAP for linear/logistic regression
+
+    [:octicons-arrow-right-24: LinearSHAP guide](explainers/linearshap.md)
 
 -   :material-chart-bar:{ .lg .middle } **Benchmarks**
 

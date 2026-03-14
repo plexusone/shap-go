@@ -8,10 +8,24 @@
 [![Visualization][viz-svg]][viz-url]
 [![License][license-svg]][license-url]
 
-A Go library for computing SHAP (SHapley Additive exPlanations) values for ML model explainability.
+ [go-ci-svg]: https://github.com/plexusone/shap-go/actions/workflows/go-ci.yaml/badge.svg?branch=main
+ [go-ci-url]: https://github.com/plexusone/shap-go/actions/workflows/go-ci.yaml
+ [go-lint-svg]: https://github.com/plexusone/shap-go/actions/workflows/go-lint.yaml/badge.svg?branch=main
+ [go-lint-url]: https://github.com/plexusone/shap-go/actions/workflows/go-lint.yaml
+ [go-sast-svg]: https://github.com/plexusone/shap-go/actions/workflows/go-sast-codeql.yaml/badge.svg?branch=main
+ [go-sast-url]: https://github.com/plexusone/shap-go/actions/workflows/go-sast-codeql.yaml
+ [goreport-svg]: https://goreportcard.com/badge/github.com/plexusone/shap-go
+ [goreport-url]: https://goreportcard.com/report/github.com/plexusone/shap-go
+ [docs-godoc-svg]: https://pkg.go.dev/badge/github.com/plexusone/shap-go
+ [docs-godoc-url]: https://pkg.go.dev/github.com/plexusone/shap-go
+ [viz-svg]: https://img.shields.io/badge/visualizaton-Go-blue.svg
+ [viz-url]: https://mango-dune-07a8b7110.1.azurestaticapps.net/?repo=plexusone%2Fshap-go
+ [loc-svg]: https://tokei.rs/b1/github/plexusone/shap-go
+ [repo-url]: https://github.com/plexusone/shap-go
+ [license-svg]: https://img.shields.io/badge/license-MIT-blue.svg
+ [license-url]: https://github.com/plexusone/shap-go/blob/master/LICENSE
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/plexusone/shap-go.svg)](https://pkg.go.dev/github.com/plexusone/shap-go)
-[![Go Report Card](https://goreportcard.com/badge/github.com/plexusone/shap-go)](https://goreportcard.com/report/github.com/plexusone/shap-go)
+A Go library for computing SHAP (SHapley Additive exPlanations) values for ML model explainability.
 
 ## Overview
 
@@ -30,8 +44,8 @@ SHAP-Go provides a Go-native implementation of SHAP value computation for explai
 | ✅ | **PermutationSHAP** | Any | Black-box, antithetic sampling for variance reduction, guarantees local accuracy |
 | ✅ | **SamplingSHAP** | Any | Monte Carlo approximation, fast, good for quick estimates |
 | ✅ | **TreeSHAP** | Trees | Exact & fast (O(TLD²)) for XGBoost, LightGBM; 40-100x faster than permutation |
+| ✅ | **LinearSHAP** | Linear | Exact closed-form solution for linear/logistic regression |
 | ⬜ | **KernelSHAP** | Any | Black-box, weighted linear regression, model-agnostic baseline |
-| ⬜ | **LinearSHAP** | Linear | Exact closed-form solution for linear/logistic regression |
 | ⬜ | **DeepSHAP** | Neural Nets | Combines DeepLIFT with Shapley values, efficient for deep networks |
 | ⬜ | **GradientSHAP** | Neural Nets | Expected gradients + noise, connects SHAP to integrated gradients |
 | ⬜ | **PartitionSHAP** | Structured | Hierarchical clustering of features, faster for correlated features |
@@ -47,9 +61,9 @@ SHAP-Go provides a Go-native implementation of SHAP value computation for explai
 | Use Case | Recommended Explainer |
 |----------|----------------------|
 | **Tree-based models (XGBoost, LightGBM)** | **TreeSHAP** ✅ |
+| **Linear/logistic regression** | **LinearSHAP** ✅ |
 | Any model, need guaranteed accuracy | PermutationSHAP |
 | Any model, quick estimates | SamplingSHAP |
-| Linear/logistic regression | LinearSHAP (when available) |
 | Deep learning models | DeepSHAP or GradientSHAP (when available) |
 | Highly correlated features | PartitionSHAP (when available) |
 | Small feature sets (≤15 features) | ExactSHAP (when available) |
@@ -395,6 +409,7 @@ The `examples/` directory contains working examples:
 | Example | Description |
 |---------|-------------|
 | [`examples/linear`](examples/linear/) | PermutationSHAP with a simple linear model |
+| [`examples/linearshap`](examples/linearshap/) | LinearSHAP for linear/logistic regression |
 | [`examples/treeshap`](examples/treeshap/) | TreeSHAP with manually constructed tree ensembles |
 | [`examples/sampling`](examples/sampling/) | SamplingSHAP Monte Carlo approximation |
 | [`examples/batch`](examples/batch/) | Batch processing with parallel workers |
@@ -403,6 +418,7 @@ The `examples/` directory contains working examples:
 Run an example:
 ```bash
 go run ./examples/linear
+go run ./examples/linearshap
 go run ./examples/treeshap
 go run ./examples/sampling
 go run ./examples/batch
@@ -412,20 +428,3 @@ go run ./examples/visualization
 ## License
 
 MIT License
-
- [go-ci-svg]: https://github.com/plexusone/shap-go/actions/workflows/go-ci.yaml/badge.svg?branch=main
- [go-ci-url]: https://github.com/plexusone/shap-go/actions/workflows/go-ci.yaml
- [go-lint-svg]: https://github.com/plexusone/shap-go/actions/workflows/go-lint.yaml/badge.svg?branch=main
- [go-lint-url]: https://github.com/plexusone/shap-go/actions/workflows/go-lint.yaml
- [go-sast-svg]: https://github.com/plexusone/shap-go/actions/workflows/go-sast-codeql.yaml/badge.svg?branch=main
- [go-sast-url]: https://github.com/plexusone/shap-go/actions/workflows/go-sast-codeql.yaml
- [goreport-svg]: https://goreportcard.com/badge/github.com/plexusone/shap-go
- [goreport-url]: https://goreportcard.com/report/github.com/plexusone/shap-go
- [docs-godoc-svg]: https://pkg.go.dev/badge/github.com/plexusone/shap-go
- [docs-godoc-url]: https://pkg.go.dev/github.com/plexusone/shap-go
- [viz-svg]: https://img.shields.io/badge/visualizaton-Go-blue.svg
- [viz-url]: https://mango-dune-07a8b7110.1.azurestaticapps.net/?repo=plexusone%2Fshap-go
- [loc-svg]: https://tokei.rs/b1/github/plexusone/shap-go
- [repo-url]: https://github.com/plexusone/shap-go
- [license-svg]: https://img.shields.io/badge/license-MIT-blue.svg
- [license-url]: https://github.com/plexusone/shap-go/blob/master/LICENSE
