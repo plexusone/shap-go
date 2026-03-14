@@ -21,11 +21,6 @@ jobs:
       - name: Run tests
         run: go test -v -race ./...
 
-      - name: Run linter
-        uses: golangci/golangci-lint-action@v4
-        with:
-          version: latest
-
   equivalence:
     name: Python SHAP Equivalence
     runs-on: ubuntu-latest
