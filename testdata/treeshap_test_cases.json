@@ -1,0 +1,137 @@
+{
+  "version": "1.0",
+  "description": "TreeSHAP test cases with known-correct SHAP values from brute-force Shapley calculation",
+  "test_suites": [
+    {
+      "name": "simple_tree",
+      "description": "Single split tree: x0 < 0.5 -> 1.0, else -> 2.0. Covers: left=50, right=50",
+      "tree": {
+        "n_features": 1,
+        "nodes": [
+          {"feature": 0, "threshold": 0.5, "yes": 1, "no": 2, "cover": 100},
+          {"is_leaf": true, "value": 1.0, "cover": 50},
+          {"is_leaf": true, "value": 2.0, "cover": 50}
+        ]
+      },
+      "base_value": 1.5,
+      "cases": [
+        {
+          "name": "goes_left",
+          "instance": [0.3],
+          "prediction": 1.0,
+          "shap_values": [-0.5],
+          "comment": "SHAP[x0] = (1.0 - 1.5) = -0.5"
+        },
+        {
+          "name": "goes_right",
+          "instance": [0.7],
+          "prediction": 2.0,
+          "shap_values": [0.5],
+          "comment": "SHAP[x0] = (2.0 - 1.5) = 0.5"
+        }
+      ]
+    },
+    {
+      "name": "two_feature_tree",
+      "description": "Two-feature tree: root splits on x0<0.5, left child splits on x1<0.5",
+      "tree": {
+        "n_features": 2,
+        "nodes": [
+          {"feature": 0, "threshold": 0.5, "yes": 1, "no": 2, "cover": 100},
+          {"feature": 1, "threshold": 0.5, "yes": 3, "no": 4, "cover": 50},
+          {"is_leaf": true, "value": 4.0, "cover": 50},
+          {"is_leaf": true, "value": 1.0, "cover": 25},
+          {"is_leaf": true, "value": 2.0, "cover": 25}
+        ]
+      },
+      "base_value": 2.75,
+      "base_value_calc": "(25*1 + 25*2 + 50*4) / 100 = 275/100 = 2.75",
+      "cases": [
+        {
+          "name": "x0<0.5,x1<0.5",
+          "instance": [0.3, 0.3],
+          "prediction": 1.0,
+          "shap_values": [-1.375, -0.375],
+          "sum": -1.75,
+          "calculation": {
+            "E[f]": 2.75,
+            "E[f|x0=0.3]": "0.5*1 + 0.5*2 = 1.5 (x1 uniform at node 1)",
+            "E[f|x1=0.3]": "0.5*1 + 0.5*4 = 2.5 (x0 uniform at root)",
+            "SHAP[x0]": "0.5*(1.5-2.75) + 0.5*(1.0-2.5) = -0.625 - 0.75 = -1.375",
+            "SHAP[x1]": "0.5*(2.5-2.75) + 0.5*(1.0-1.5) = -0.125 - 0.25 = -0.375"
+          }
+        },
+        {
+          "name": "x0<0.5,x1>=0.5",
+          "instance": [0.3, 0.7],
+          "prediction": 2.0,
+          "shap_values": [-1.125, 0.375],
+          "sum": -0.75,
+          "calculation": {
+            "E[f]": 2.75,
+            "E[f|x0=0.3]": 1.5,
+            "E[f|x1=0.7]": "0.5*2 + 0.5*4 = 3.0",
+            "SHAP[x0]": "0.5*(1.5-2.75) + 0.5*(2.0-3.0) = -0.625 - 0.5 = -1.125",
+            "SHAP[x1]": "0.5*(3.0-2.75) + 0.5*(2.0-1.5) = 0.125 + 0.25 = 0.375"
+          }
+        },
+        {
+          "name": "x0>=0.5",
+          "instance": [0.7, 0.3],
+          "prediction": 4.0,
+          "shap_values": [1.375, -0.125],
+          "sum": 1.25,
+          "calculation": {
+            "E[f]": 2.75,
+            "E[f|x0=0.7]": 4.0,
+            "E[f|x1=0.3]": 2.5,
+            "SHAP[x0]": "0.5*(4.0-2.75) + 0.5*(4.0-2.5) = 0.625 + 0.75 = 1.375",
+            "SHAP[x1]": "0.5*(2.5-2.75) + 0.5*(4.0-4.0) = -0.125 + 0 = -0.125"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ensemble_simple",
+      "description": "Ensemble of two single-split trees on same feature",
+      "tree": {
+        "n_features": 1,
+        "n_trees": 2,
+        "trees": [
+          {
+            "nodes": [
+              {"feature": 0, "threshold": 0.5, "yes": 1, "no": 2, "cover": 100},
+              {"is_leaf": true, "value": 1.0, "cover": 50},
+              {"is_leaf": true, "value": 2.0, "cover": 50}
+            ]
+          },
+          {
+            "nodes": [
+              {"feature": 0, "threshold": 0.5, "yes": 1, "no": 2, "cover": 100},
+              {"is_leaf": true, "value": 0.5, "cover": 50},
+              {"is_leaf": true, "value": 1.5, "cover": 50}
+            ]
+          }
+        ]
+      },
+      "base_value": 2.5,
+      "base_value_calc": "tree1: 1.5, tree2: 1.0, total: 2.5",
+      "cases": [
+        {
+          "name": "goes_left",
+          "instance": [0.3],
+          "prediction": 1.5,
+          "shap_values": [-1.0],
+          "comment": "tree1: -0.5, tree2: -0.5, total: -1.0"
+        },
+        {
+          "name": "goes_right",
+          "instance": [0.7],
+          "prediction": 3.5,
+          "shap_values": [1.0],
+          "comment": "tree1: 0.5, tree2: 0.5, total: 1.0"
+        }
+      ]
+    }
+  ]
+}

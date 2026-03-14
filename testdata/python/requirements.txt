@@ -1,0 +1,12 @@
+# Python dependencies for TreeSHAP test case generation
+# Pin exact versions for reproducible test results
+#
+# NOTE: On macOS, you may need to install llvmlite via conda/homebrew first,
+# or use the pre-built wheels in CI. See README.md for details.
+
+numpy==1.26.4
+scikit-learn==1.4.2
+shap==0.44.1
+
+# SHAP's dependencies (numba requires llvmlite)
+numba>=0.50.0
