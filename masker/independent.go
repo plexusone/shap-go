@@ -53,12 +53,13 @@ func NewIndependentMaskerWithSeed(background [][]float64, seed int64) (*Independ
 // Mask creates a masked version of the instance.
 // For each feature where mask[i] is true, the feature value is replaced
 // with a randomly sampled value from the background dataset.
-func (m *IndependentMasker) Mask(instance []float64, mask []bool) []float64 {
+// Returns an error if instance or mask dimensions don't match the expected feature count.
+func (m *IndependentMasker) Mask(instance []float64, mask []bool) ([]float64, error) {
 	if len(instance) != m.numFeatures {
-		panic(fmt.Sprintf("instance has %d features, expected %d", len(instance), m.numFeatures))
+		return nil, fmt.Errorf("%w: instance has %d features, expected %d", ErrInstanceFeatureMismatch, len(instance), m.numFeatures)
 	}
 	if len(mask) != m.numFeatures {
-		panic(fmt.Sprintf("mask has %d elements, expected %d", len(mask), m.numFeatures))
+		return nil, fmt.Errorf("%w: mask has %d elements, expected %d", ErrMaskFeatureMismatch, len(mask), m.numFeatures)
 	}
 
 	result := make([]float64, m.numFeatures)
@@ -73,21 +74,22 @@ func (m *IndependentMasker) Mask(instance []float64, mask []bool) []float64 {
 		}
 	}
 
-	return result
+	return result, nil
 }
 
 // MaskWithBackground creates a masked version using a specific background sample.
 // This is useful when you want deterministic behavior or when computing
 // SHAP values with a fixed background reference.
-func (m *IndependentMasker) MaskWithBackground(instance []float64, mask []bool, bgSample []float64) []float64 {
+// Returns an error if instance, mask, or background sample dimensions don't match.
+func (m *IndependentMasker) MaskWithBackground(instance []float64, mask []bool, bgSample []float64) ([]float64, error) {
 	if len(instance) != m.numFeatures {
-		panic(fmt.Sprintf("instance has %d features, expected %d", len(instance), m.numFeatures))
+		return nil, fmt.Errorf("%w: instance has %d features, expected %d", ErrInstanceFeatureMismatch, len(instance), m.numFeatures)
 	}
 	if len(mask) != m.numFeatures {
-		panic(fmt.Sprintf("mask has %d elements, expected %d", len(mask), m.numFeatures))
+		return nil, fmt.Errorf("%w: mask has %d elements, expected %d", ErrMaskFeatureMismatch, len(mask), m.numFeatures)
 	}
 	if len(bgSample) != m.numFeatures {
-		panic(fmt.Sprintf("background sample has %d features, expected %d", len(bgSample), m.numFeatures))
+		return nil, fmt.Errorf("%w: background sample has %d features, expected %d", ErrBackgroundFeatureMismatch, len(bgSample), m.numFeatures)
 	}
 
 	result := make([]float64, m.numFeatures)
@@ -99,7 +101,7 @@ func (m *IndependentMasker) MaskWithBackground(instance []float64, mask []bool, 
 		}
 	}
 
-	return result
+	return result, nil
 }
 
 // NumFeatures returns the number of features.

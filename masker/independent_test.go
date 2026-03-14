@@ -1,6 +1,7 @@
 package masker
 
 import (
+	"errors"
 	"testing"
 )
 
@@ -81,7 +82,10 @@ func TestIndependentMasker_MaskWithBackground(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := m.MaskWithBackground(instance, tt.mask, bgSample)
+			result, err := m.MaskWithBackground(instance, tt.mask, bgSample)
+			if err != nil {
+				t.Fatalf("MaskWithBackground() error = %v", err)
+			}
 
 			for i, v := range result {
 				if v != tt.expected[i] {
@@ -106,7 +110,10 @@ func TestIndependentMasker_Mask(t *testing.T) {
 	instance := []float64{1.0, 2.0, 3.0}
 	mask := []bool{true, false, true}
 
-	result := m.Mask(instance, mask)
+	result, err := m.Mask(instance, mask)
+	if err != nil {
+		t.Fatalf("Mask() error = %v", err)
+	}
 
 	// Feature 1 should be unmasked (original value)
 	if result[1] != 2.0 {
@@ -190,4 +197,119 @@ func TestIndependentMasker_Background(t *testing.T) {
 
 func TestIndependentMasker_ImplementsMasker(t *testing.T) {
 	var _ Masker = (*IndependentMasker)(nil)
+}
+
+func TestIndependentMasker_Mask_Errors(t *testing.T) {
+	background := [][]float64{
+		{1.0, 2.0, 3.0},
+		{4.0, 5.0, 6.0},
+	}
+
+	m, err := NewIndependentMasker(background)
+	if err != nil {
+		t.Fatalf("NewIndependentMasker() error = %v", err)
+	}
+
+	tests := []struct {
+		name        string
+		instance    []float64
+		mask        []bool
+		expectedErr error
+	}{
+		{
+			name:        "instance too short",
+			instance:    []float64{1.0, 2.0},
+			mask:        []bool{true, false, true},
+			expectedErr: ErrInstanceFeatureMismatch,
+		},
+		{
+			name:        "instance too long",
+			instance:    []float64{1.0, 2.0, 3.0, 4.0},
+			mask:        []bool{true, false, true},
+			expectedErr: ErrInstanceFeatureMismatch,
+		},
+		{
+			name:        "mask too short",
+			instance:    []float64{1.0, 2.0, 3.0},
+			mask:        []bool{true, false},
+			expectedErr: ErrMaskFeatureMismatch,
+		},
+		{
+			name:        "mask too long",
+			instance:    []float64{1.0, 2.0, 3.0},
+			mask:        []bool{true, false, true, false},
+			expectedErr: ErrMaskFeatureMismatch,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := m.Mask(tt.instance, tt.mask)
+			if err == nil {
+				t.Error("Mask() should return an error")
+				return
+			}
+			if !errors.Is(err, tt.expectedErr) {
+				t.Errorf("Mask() error = %v, want %v", err, tt.expectedErr)
+			}
+		})
+	}
+}
+
+func TestIndependentMasker_MaskWithBackground_Errors(t *testing.T) {
+	background := [][]float64{
+		{1.0, 2.0, 3.0},
+	}
+
+	m, err := NewIndependentMasker(background)
+	if err != nil {
+		t.Fatalf("NewIndependentMasker() error = %v", err)
+	}
+
+	validInstance := []float64{1.0, 2.0, 3.0}
+	validMask := []bool{true, false, true}
+	validBgSample := []float64{0.0, 0.0, 0.0}
+
+	tests := []struct {
+		name        string
+		instance    []float64
+		mask        []bool
+		bgSample    []float64
+		expectedErr error
+	}{
+		{
+			name:        "instance wrong size",
+			instance:    []float64{1.0, 2.0},
+			mask:        validMask,
+			bgSample:    validBgSample,
+			expectedErr: ErrInstanceFeatureMismatch,
+		},
+		{
+			name:        "mask wrong size",
+			instance:    validInstance,
+			mask:        []bool{true, false},
+			bgSample:    validBgSample,
+			expectedErr: ErrMaskFeatureMismatch,
+		},
+		{
+			name:        "background sample wrong size",
+			instance:    validInstance,
+			mask:        validMask,
+			bgSample:    []float64{0.0, 0.0},
+			expectedErr: ErrBackgroundFeatureMismatch,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := m.MaskWithBackground(tt.instance, tt.mask, tt.bgSample)
+			if err == nil {
+				t.Error("MaskWithBackground() should return an error")
+				return
+			}
+			if !errors.Is(err, tt.expectedErr) {
+				t.Errorf("MaskWithBackground() error = %v, want %v", err, tt.expectedErr)
+			}
+		})
+	}
 }
