@@ -1,0 +1,82 @@
+site_name: SHAP-Go
+site_description: A Go library for computing SHAP values for ML model explainability
+site_url: https://plexusone.github.io/shap-go/
+repo_url: https://github.com/plexusone/shap-go
+repo_name: plexusone/shap-go
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search
+  - minify:
+      minify_html: true
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Quick Start: getting-started/quickstart.md
+  - Explainers:
+    - Overview: explainers/overview.md
+    - TreeSHAP: explainers/treeshap.md
+    - LinearSHAP: explainers/linearshap.md
+    - PermutationSHAP: explainers/permutation.md
+    - SamplingSHAP: explainers/sampling.md
+  - Models:
+    - XGBoost: models/xgboost.md
+    - LightGBM: models/lightgbm.md
+    - ONNX Runtime: models/onnx.md
+  - Visualization: visualization/charts.md
+  - Benchmarks: benchmarks.md
+  - API Reference: api/reference.md
+  - Contributing: contributing.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/plexusone/shap-go
+  generator: false
+
+copyright: Copyright &copy; 2024 PlexusOne
