@@ -1,0 +1,87 @@
+{
+  "irVersion": "1.0",
+  "project": "shap-go",
+  "repository": "https://github.com/plexusone/shap-go",
+  "versioning": "semver",
+  "commitConvention": "conventional",
+  "maintainers": ["plexusone"],
+  "releases": [
+    {
+      "version": "v0.2.0",
+      "date": "2025-03-14",
+      "highlights": [
+        { "description": "TreeSHAP for XGBoost/LightGBM - exact SHAP values 40-100x faster than permutation methods" },
+        { "description": "LinearSHAP for linear models - O(d) closed-form SHAP computation" },
+        { "description": "Comprehensive MkDocs documentation site with guides and API reference" }
+      ],
+      "breaking": [
+        { "description": "`Masker.Mask()` now returns `([]float64, error)` instead of panicking on dimension mismatches", "commit": "8f146ee" }
+      ],
+      "upgradeGuide": [
+        { "description": "Add error handling to all `Mask()` and `MaskWithBackground()` calls" },
+        { "description": "Handle new sentinel errors: `ErrInstanceFeatureMismatch`, `ErrMaskFeatureMismatch`, `ErrBackgroundFeatureMismatch`" }
+      ],
+      "added": [
+        { "description": "TreeSHAP explainer (`explainer/tree`) with O(TLD²) algorithm for tree ensembles", "commit": "44c485b" },
+        { "description": "XGBoost JSON model parser via `tree.LoadXGBoostModel()`", "commit": "44c485b" },
+        { "description": "LightGBM JSON model parser via `tree.LoadLightGBMModel()`", "commit": "44c485b" },
+        { "description": "LinearSHAP explainer (`explainer/linear`) with closed-form solution", "commit": "b54aa05" },
+        { "description": "TreeSHAP example (`examples/treeshap`)", "commit": "31f89ca" },
+        { "description": "LinearSHAP example (`examples/linearshap`)", "commit": "31f89ca" },
+        { "description": "SamplingSHAP example (`examples/sampling`)", "commit": "31f89ca" },
+        { "description": "Batch processing example (`examples/batch`)", "commit": "31f89ca" },
+        { "description": "Visualization example (`examples/visualization`)", "commit": "31f89ca" }
+      ],
+      "changed": [
+        { "description": "Masker interface returns errors instead of panicking", "commit": "8f146ee", "breaking": true }
+      ],
+      "fixed": [
+        { "description": "Resolve CI lint errors (gofmt, gosec)", "commit": "5ef4049" }
+      ],
+      "documentation": [
+        { "description": "MkDocs documentation site with explainer guides, API reference, and model integration docs", "commit": "e961b18" },
+        { "description": "Release notes for v0.1.0 and v0.2.0", "commit": "f53548b" },
+        { "description": "Updated README with TreeSHAP usage examples and feature matrix", "commit": "e961b18" }
+      ],
+      "tests": [
+        { "description": "ONNX session tests", "commit": "ce2a0ea" },
+        { "description": "Python SHAP comparison test data for TreeSHAP validation", "commit": "9401f41" },
+        { "description": "TreeSHAP benchmarks and coverage tests", "commit": "44c485b" }
+      ],
+      "infrastructure": [
+        { "description": "GitHub Actions CI workflow with Go 1.21/1.22/1.23 matrix", "commit": "ec5d044" },
+        { "description": "GitHub Actions docs workflow for MkDocs deployment", "commit": "ec5d044" },
+        { "description": "Makefile with test, lint, and testdata generation targets", "commit": "612808b" }
+      ],
+      "build": [
+        { "description": "Add `.gitignore` for build artifacts and Python venv", "commit": "612808b" },
+        { "description": "Exclude dupl linter for test files in golangci config", "commit": "1e11f34" }
+      ]
+    },
+    {
+      "version": "v0.1.0",
+      "date": "2025-03-09",
+      "highlights": [
+        { "description": "Initial release of SHAP-Go with PermutationSHAP and SamplingSHAP explainers" },
+        { "description": "ONNX Runtime integration for model inference" },
+        { "description": "ChartIR visualization output for waterfall, bar, and beeswarm charts" }
+      ],
+      "added": [
+        { "description": "Core explanation types (`explanation/`) for SHAP value representation", "commit": "843f6a1" },
+        { "description": "Model interface with `FuncModel` wrapper (`model/`)", "commit": "8b44a15" },
+        { "description": "ONNX Runtime integration (`model/onnx/`)", "commit": "b6b75f6" },
+        { "description": "Feature masking strategies (`masker/`) with `IndependentMasker`", "commit": "d95f790" },
+        { "description": "Background dataset management (`background/`)", "commit": "3bff392" },
+        { "description": "Explainer interface and configuration (`explainer/`)", "commit": "74b8179" },
+        { "description": "PermutationSHAP with antithetic sampling for variance reduction", "commit": "1b4e93d" },
+        { "description": "SamplingSHAP for Monte Carlo approximation", "commit": "821b1c1" },
+        { "description": "Render package with ChartIR output formats", "commit": "50a6ebb" },
+        { "description": "Permutation generation utilities (`internal/rand/`)", "commit": "30945d7" },
+        { "description": "Linear model example (`examples/linear`)", "commit": "6440da0" }
+      ],
+      "documentation": [
+        { "description": "Comprehensive README with usage examples and feature matrix", "commit": "4cfab99" }
+      ]
+    }
+  ]
+}
