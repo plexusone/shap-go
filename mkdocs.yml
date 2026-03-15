@@ -62,6 +62,7 @@ nav:
     - Overview: explainers/overview.md
     - TreeSHAP: explainers/treeshap.md
     - LinearSHAP: explainers/linearshap.md
+    - KernelSHAP: explainers/kernelshap.md
     - PermutationSHAP: explainers/permutation.md
     - SamplingSHAP: explainers/sampling.md
   - Models:
@@ -69,6 +70,8 @@ nav:
     - LightGBM: models/lightgbm.md
     - ONNX Runtime: models/onnx.md
   - Visualization: visualization/charts.md
+  - Testing:
+    - Python Validation: testing/python-validation.md
   - Benchmarks: benchmarks.md
   - API Reference: api/reference.md
   - Releases:
