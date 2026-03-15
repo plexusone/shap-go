@@ -21,7 +21,7 @@ jobs:
       - name: Run tests
         run: go test -v -race ./...
 
-  equivalence:
+  treeshap:
     name: TreeSHAP Tests
     runs-on: ubuntu-latest
     steps:
@@ -41,6 +41,29 @@ jobs:
       - name: Run all tree tests
         run: go test -v ./explainer/tree/...
 
+  kernelshap:
+    name: KernelSHAP Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Run KernelSHAP equivalence tests
+        run: go test -v ./explainer/kernel/... -run TestAgainstPythonSHAP
+
+      - name: Verify local accuracy property
+        run: go test -v ./explainer/kernel/... -run TestLocalAccuracyProperty
+
+      - name: Verify correlation with Python SHAP
+        run: go test -v ./explainer/kernel/... -run TestCorrelationWithPythonSHAP
+
+      - name: Run all kernel tests
+        run: go test -v ./explainer/kernel/...
+
   # Job to verify the committed test data is valid JSON
   verify-testdata:
     name: Verify Test Data
@@ -52,10 +75,18 @@ jobs:
         run: |
           python3 -c "
           import json
-          with open('testdata/treeshap_test_cases.json') as f:
-              data = json.load(f)
-          print('Test data is valid JSON')
-          print('Version:', data.get('version'))
-          print('Test suites:', [s['name'] for s in data.get('test_suites', [])])
-          print('Total cases:', sum(len(s['cases']) for s in data.get('test_suites', [])))
+
+          files = [
+              'testdata/treeshap_test_cases.json',
+              'testdata/kernelshap_test_cases.json',
+          ]
+
+          for filepath in files:
+              with open(filepath) as f:
+                  data = json.load(f)
+              print(f'{filepath}: valid JSON')
+              print('  Version:', data.get('version'))
+              print('  Test suites:', [s['name'] for s in data.get('test_suites', [])])
+              print('  Total cases:', sum(len(s['cases']) for s in data.get('test_suites', [])))
+              print()
           "
