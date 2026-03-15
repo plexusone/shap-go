@@ -35,3 +35,7 @@ Thumbs.db
 # Python virtual environments
 testdata/python/venv/
 testdata/python/__pycache__/
+.venv/
+
+# Ideation chat files
+IDEATION_CHAT*.md
