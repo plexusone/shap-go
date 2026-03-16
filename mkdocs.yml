@@ -63,6 +63,7 @@ nav:
     - TreeSHAP: explainers/treeshap.md
     - LinearSHAP: explainers/linearshap.md
     - KernelSHAP: explainers/kernelshap.md
+    - ExactSHAP: explainers/exactshap.md
     - PermutationSHAP: explainers/permutation.md
     - SamplingSHAP: explainers/sampling.md
   - Models:
@@ -75,6 +76,7 @@ nav:
   - Benchmarks: benchmarks.md
   - API Reference: api/reference.md
   - Releases:
+    - v0.3.0: releases/v0.3.0.md
     - v0.2.0: releases/v0.2.0.md
     - v0.1.0: releases/v0.1.0.md
   - Contributing: contributing.md

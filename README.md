@@ -45,7 +45,8 @@ SHAP-Go provides a Go-native implementation of SHAP value computation for explai
 | ✅ | **SamplingSHAP** | Any | Monte Carlo approximation, fast, good for quick estimates |
 | ✅ | **TreeSHAP** | Trees | Exact & fast (O(TLD²)) for XGBoost, LightGBM; 40-100x faster than permutation |
 | ✅ | **LinearSHAP** | Linear | Exact closed-form solution for linear/logistic regression |
-| ⬜ | **KernelSHAP** | Any | Black-box, weighted linear regression, model-agnostic baseline |
+| ✅ | **KernelSHAP** | Any | Black-box, weighted linear regression, model-agnostic baseline |
+| ✅ | **ExactSHAP** | Any | Brute-force exact computation, O(2^n) - only for small feature sets (≤15) |
 | ⬜ | **DeepSHAP** | Neural Nets | Combines DeepLIFT with Shapley values, efficient for deep networks |
 | ⬜ | **GradientSHAP** | Neural Nets | Expected gradients + noise, connects SHAP to integrated gradients |
 | ⬜ | **PartitionSHAP** | Structured | Hierarchical clustering of features, faster for correlated features |
@@ -63,10 +64,11 @@ SHAP-Go provides a Go-native implementation of SHAP value computation for explai
 | **Tree-based models (XGBoost, LightGBM)** | **TreeSHAP** ✅ |
 | **Linear/logistic regression** | **LinearSHAP** ✅ |
 | Any model, need guaranteed accuracy | PermutationSHAP |
+| Any model, weighted regression baseline | **KernelSHAP** ✅ |
 | Any model, quick estimates | SamplingSHAP |
+| Small feature sets (≤15 features) | **ExactSHAP** ✅ |
 | Deep learning models | DeepSHAP or GradientSHAP (when available) |
 | Highly correlated features | PartitionSHAP (when available) |
-| Small feature sets (≤15 features) | ExactSHAP (when available) |
 
 ## Installation
 
@@ -250,6 +252,32 @@ TreeSHAP for tree-based models:
 - LightGBM JSON model support
 - Parallel batch processing
 
+### `explainer/linear`
+
+LinearSHAP for linear models:
+
+- **Exact** closed-form solution: `SHAP[i] = coef[i] * (x[i] - E[X[i]])`
+- O(d) complexity where d is number of features
+- Support for linear regression and logistic regression
+
+### `explainer/kernel`
+
+KernelSHAP for model-agnostic explanations:
+
+- Model-agnostic black-box method
+- Weighted linear regression on binary coalition masks
+- SHAP kernel weights: `(d-1) / (C(d,k) * k * (d-k))`
+- Validated against Python SHAP library
+
+### `explainer/exact`
+
+ExactSHAP for brute-force exact Shapley values:
+
+- **Mathematically exact** values by enumerating all 2^n coalitions
+- O(n * 2^n) complexity - only practical for ≤15 features
+- Useful for validating other SHAP implementations
+- Reference implementation for small feature sets
+
 ### `explainer/permutation`
 
 Permutation SHAP with antithetic sampling:
@@ -411,18 +439,22 @@ The `examples/` directory contains working examples:
 | [`examples/linear`](examples/linear/) | PermutationSHAP with a simple linear model |
 | [`examples/linearshap`](examples/linearshap/) | LinearSHAP for linear/logistic regression |
 | [`examples/treeshap`](examples/treeshap/) | TreeSHAP with manually constructed tree ensembles |
+| [`examples/kernelshap`](examples/kernelshap/) | KernelSHAP weighted linear regression explainer |
 | [`examples/sampling`](examples/sampling/) | SamplingSHAP Monte Carlo approximation |
 | [`examples/batch`](examples/batch/) | Batch processing with parallel workers |
 | [`examples/visualization`](examples/visualization/) | Generating chart data for visualizations |
+| [`examples/markdown_report`](examples/markdown_report/) | Generate Markdown reports with SHAP explanations |
 
 Run an example:
 ```bash
 go run ./examples/linear
 go run ./examples/linearshap
 go run ./examples/treeshap
+go run ./examples/kernelshap
 go run ./examples/sampling
 go run ./examples/batch
 go run ./examples/visualization
+go run ./examples/markdown_report
 ```
 
 ## License

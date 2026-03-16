@@ -83,7 +83,8 @@ func main() {
 | :white_check_mark: | **LinearSHAP** | Linear | Exact closed-form for linear/logistic regression |
 | :white_check_mark: | **PermutationSHAP** | Any | Black-box, guarantees local accuracy |
 | :white_check_mark: | **SamplingSHAP** | Any | Monte Carlo approximation, fast estimates |
-| :white_large_square: | KernelSHAP | Any | Weighted linear regression (planned) |
+| :white_check_mark: | **KernelSHAP** | Any | Model-agnostic weighted linear regression |
+| :white_check_mark: | **ExactSHAP** | Any | Brute-force exact, O(2^n) for small feature sets |
 | :white_large_square: | DeepSHAP | Neural Nets | For deep learning (planned) |
 
 ## Getting Started
@@ -123,6 +124,14 @@ Ready to start explaining your models?
     Exact SHAP for linear/logistic regression
 
     [:octicons-arrow-right-24: LinearSHAP guide](explainers/linearshap.md)
+
+-   :material-cube-outline:{ .lg .middle } **KernelSHAP**
+
+    ---
+
+    Model-agnostic weighted linear regression
+
+    [:octicons-arrow-right-24: KernelSHAP guide](explainers/kernelshap.md)
 
 -   :material-chart-bar:{ .lg .middle } **Benchmarks**
 

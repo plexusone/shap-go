@@ -11,7 +11,7 @@ SHAP-Go provides multiple explainer algorithms, each with different trade-offs b
 | **PermutationSHAP** | Any | Exact | Slow | Implemented |
 | **SamplingSHAP** | Any | Approximate | Fast | Implemented |
 | **KernelSHAP** | Any | Approximate | Medium | Implemented |
-| **ExactSHAP** | Any (≤15 features) | Exact | Very Slow | Planned |
+| **ExactSHAP** | Any (≤15 features) | Exact | Very Slow | Implemented |
 | **DeepSHAP** | Neural Networks | Approximate | Fast | Planned |
 | **GradientSHAP** | Neural Networks | Approximate | Fast | Planned |
 | **PartitionSHAP** | Structured Data | Approximate | Fast | Planned |
@@ -212,28 +212,43 @@ exp, _ := kernel.New(model, background,
 
 ---
 
-## Planned Explainers
-
 ### ExactSHAP
 
-**For:** Any model with a small number of features (≤15).
+**Best for:** Any model with a small number of features (≤15) where exact values are required.
+
+```go
+exp, _ := exact.New(model, background,
+    explainer.WithFeatureNames(names),
+)
+```
 
 | Property | Value |
 |----------|-------|
 | **Accuracy** | Exact (brute-force enumeration) |
-| **Complexity** | O(2ⁿ × model calls) |
-| **Use case** | Small feature sets, validation |
-
-ExactSHAP computes true Shapley values by enumerating all 2ⁿ feature coalitions. This is only practical for small feature sets due to exponential complexity, but provides ground truth for validating other methods.
+| **Complexity** | O(n × 2ⁿ × model calls) |
+| **Background data** | Required |
+| **Local accuracy** | Guaranteed |
 
 **When to use:**
 
-- Very few features (≤12-15)
-- You need mathematically exact values
-- Validating other approximate methods
+- Very few features (≤15)
+- You need mathematically exact SHAP values
+- Validating other approximate methods (KernelSHAP, SamplingSHAP)
 - Educational/research purposes
+- Ground truth for testing
+
+**When NOT to use:**
+
+- More than 15 features (exponential complexity)
+- Real-time applications
+- Tree models (use TreeSHAP)
+- Linear models (use LinearSHAP)
+
+[ExactSHAP Guide →](exactshap.md)
 
 ---
+
+## Planned Explainers
 
 ### DeepSHAP
 
@@ -317,8 +332,11 @@ PartitionSHAP uses hierarchical clustering to group correlated features, computi
 | PermutationSHAP | ✅ | ✅ | ✅ | ✅ |
 | KernelSHAP | ✅ | ✅ | ✅ | ✅ |
 | SamplingSHAP | ✅ | ✅ | ✅ | ✅ |
+| ExactSHAP | ✅* | ✅* | ✅* | ✅* |
 | DeepSHAP | ❌ | ❌ | ✅ | ❌ |
 | GradientSHAP | ❌ | ❌ | ✅ | ❌ |
+
+*ExactSHAP: Limited to ≤15 features due to O(2^n) complexity
 
 ---
 
