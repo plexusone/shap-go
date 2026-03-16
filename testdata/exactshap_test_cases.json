@@ -1,0 +1,141 @@
+{
+  "version": "1.0",
+  "description": "ExactSHAP test cases with mathematically verified Shapley values",
+  "generated_by": "manual calculation based on Shapley value theory",
+  "test_suites": [
+    {
+      "name": "linear_model_zero_background",
+      "description": "Linear model: y = 1*x0 + 2*x1 + 3*x2. With zero background, SHAP values equal weighted contributions.",
+      "model": "linear",
+      "n_features": 3,
+      "background": [[0.0, 0.0, 0.0]],
+      "base_value": 0.0,
+      "cases": [
+        {
+          "name": "all_ones",
+          "instance": [1.0, 1.0, 1.0],
+          "prediction": 6.0,
+          "shap_values": [1.0, 2.0, 3.0],
+          "comment": "SHAP[i] = weight[i] * instance[i] for linear model with zero background"
+        },
+        {
+          "name": "increasing",
+          "instance": [1.0, 2.0, 3.0],
+          "prediction": 14.0,
+          "shap_values": [1.0, 4.0, 9.0],
+          "comment": "1*1=1, 2*2=4, 3*3=9"
+        },
+        {
+          "name": "half",
+          "instance": [0.5, 0.5, 0.5],
+          "prediction": 3.0,
+          "shap_values": [0.5, 1.0, 1.5],
+          "comment": "1*0.5=0.5, 2*0.5=1.0, 3*0.5=1.5"
+        }
+      ]
+    },
+    {
+      "name": "weighted_model_with_bias",
+      "description": "Weighted model: y = 5 + 2*x0 + 3*x1. Background mean at [1, 1], base_value = 10.",
+      "model": "weighted_linear",
+      "n_features": 2,
+      "background": [[0.0, 0.0], [2.0, 2.0]],
+      "base_value": 10.0,
+      "cases": [
+        {
+          "name": "at_mean",
+          "instance": [1.0, 1.0],
+          "prediction": 10.0,
+          "shap_values": [0.0, 0.0],
+          "comment": "At background mean, SHAP values are zero"
+        },
+        {
+          "name": "above_mean",
+          "instance": [2.0, 3.0],
+          "prediction": 18.0,
+          "shap_values": [2.0, 6.0],
+          "comment": "SHAP[0] = 2*(2-1)=2, SHAP[1] = 3*(3-1)=6"
+        },
+        {
+          "name": "at_zero",
+          "instance": [0.0, 0.0],
+          "prediction": 5.0,
+          "shap_values": [-2.0, -3.0],
+          "comment": "SHAP[0] = 2*(0-1)=-2, SHAP[1] = 3*(0-1)=-3"
+        }
+      ]
+    },
+    {
+      "name": "quadratic_model",
+      "description": "Quadratic model: y = x0 * x1. With zero background, features share contribution equally due to symmetry.",
+      "model": "quadratic",
+      "n_features": 2,
+      "background": [[0.0, 0.0]],
+      "base_value": 0.0,
+      "cases": [
+        {
+          "name": "symmetric_3_4",
+          "instance": [3.0, 4.0],
+          "prediction": 12.0,
+          "shap_values": [6.0, 6.0],
+          "comment": "For y=x0*x1 with zero background: SHAP[0]=SHAP[1]=(prediction-base)/2=6"
+        },
+        {
+          "name": "symmetric_2_2",
+          "instance": [2.0, 2.0],
+          "prediction": 4.0,
+          "shap_values": [2.0, 2.0],
+          "comment": "Symmetric case: each feature contributes half"
+        }
+      ]
+    },
+    {
+      "name": "four_feature_linear",
+      "description": "Four-feature linear model: y = 1*x0 + 2*x1 + 3*x2 + 4*x3 with zero background.",
+      "model": "linear",
+      "n_features": 4,
+      "background": [[0.0, 0.0, 0.0, 0.0]],
+      "base_value": 0.0,
+      "cases": [
+        {
+          "name": "all_ones",
+          "instance": [1.0, 1.0, 1.0, 1.0],
+          "prediction": 10.0,
+          "shap_values": [1.0, 2.0, 3.0, 4.0],
+          "comment": "SHAP equals weighted contributions"
+        },
+        {
+          "name": "increasing",
+          "instance": [1.0, 2.0, 3.0, 4.0],
+          "prediction": 30.0,
+          "shap_values": [1.0, 4.0, 9.0, 16.0],
+          "comment": "1*1=1, 2*2=4, 3*3=9, 4*4=16"
+        }
+      ]
+    },
+    {
+      "name": "quadratic_nonzero_background",
+      "description": "Quadratic model: y = x0 * x1. Background at [1, 2], base_value = 2.",
+      "model": "quadratic",
+      "n_features": 2,
+      "background": [[1.0, 2.0]],
+      "base_value": 2.0,
+      "cases": [
+        {
+          "name": "at_background",
+          "instance": [1.0, 2.0],
+          "prediction": 2.0,
+          "shap_values": [0.0, 0.0],
+          "comment": "At background point, SHAP values are zero"
+        },
+        {
+          "name": "instance_3_4",
+          "instance": [3.0, 4.0],
+          "prediction": 12.0,
+          "shap_values": [6.0, 4.0],
+          "comment": "Asymmetric Shapley: x0 gets (4+8)/2=6, x1 gets (6+2)/2=4"
+        }
+      ]
+    }
+  ]
+}
