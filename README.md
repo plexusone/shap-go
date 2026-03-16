@@ -31,11 +31,11 @@ A Go library for computing SHAP (SHapley Additive exPlanations) values for ML mo
 
 SHAP-Go provides a Go-native implementation of SHAP value computation for explaining machine learning model predictions. It supports:
 
-- **ONNX models** via ONNX Runtime bindings
-- **Custom models** via a simple function interface
-- **Permutation SHAP** with antithetic sampling for variance reduction
-- **Sampling SHAP** using Monte Carlo estimation
-- **JSON-serializable explanations** for audit/compliance
+- 📦 **ONNX models** via ONNX Runtime bindings
+- ⚙️ **Custom models** via a simple function interface
+- 🔀 **Permutation SHAP** with antithetic sampling for variance reduction
+- 🎲 **Sampling SHAP** using Monte Carlo estimation
+- 📋 **JSON-serializable explanations** for audit/compliance
 
 ## Explainer Types
 
@@ -54,8 +54,8 @@ SHAP-Go provides a Go-native implementation of SHAP value computation for explai
 
 ### Legend
 
-- ✅ Implemented
-- ⬜ Not yet implemented
+- ✅ **Implemented**
+- ⬜ **Not yet implemented**
 
 ### Choosing an Explainer
 
@@ -222,89 +222,89 @@ explanations, err := explainer.ExplainBatch(ctx, instances)
 
 Core types for SHAP explanations:
 
-- `Explanation` - Contains prediction, base value, SHAP values, and metadata
-- `Verify()` - Checks local accuracy (sum of SHAP values = prediction - base)
-- `TopFeatures()` - Returns features sorted by absolute SHAP value
-- JSON serialization with `ToJSON()` and `FromJSON()`
+- 📊 `Explanation` - Contains prediction, base value, SHAP values, and metadata
+- ✔️ `Verify()` - Checks local accuracy (sum of SHAP values = prediction - base)
+- 🔝 `TopFeatures()` - Returns features sorted by absolute SHAP value
+- 📄 JSON serialization with `ToJSON()` and `FromJSON()`
 
 ### `model`
 
 Model interface for SHAP computation:
 
-- `Model` interface with `Predict()`, `PredictBatch()`, and `NumFeatures()`
-- `FuncModel` - Wraps a prediction function as a Model
+- 🔌 `Model` interface with `Predict()`, `PredictBatch()`, and `NumFeatures()`
+- 🛠️ `FuncModel` - Wraps a prediction function as a Model
 
 ### `model/onnx`
 
 ONNX Runtime wrapper:
 
-- `Session` - Wraps an ONNX Runtime session
-- Supports batch predictions
-- Requires ONNX Runtime shared library
+- 🔗 `Session` - Wraps an ONNX Runtime session
+- 📦 Supports batch predictions
+- 📚 Requires ONNX Runtime shared library
 
 ### `explainer/tree`
 
 TreeSHAP for tree-based models:
 
-- **Exact** SHAP values (not approximations)
-- O(TLD²) complexity - 40-100x faster than permutation
-- XGBoost JSON model support
-- LightGBM JSON model support
-- Parallel batch processing
+- 🎯 **Exact** SHAP values (not approximations)
+- ⚡ O(TLD²) complexity - 40-100x faster than permutation
+- 🌲 XGBoost JSON model support
+- 💡 LightGBM JSON model support
+- 🔄 Parallel batch processing
 
 ### `explainer/linear`
 
 LinearSHAP for linear models:
 
-- **Exact** closed-form solution: `SHAP[i] = coef[i] * (x[i] - E[X[i]])`
-- O(d) complexity where d is number of features
-- Support for linear regression and logistic regression
+- 🎯 **Exact** closed-form solution: `SHAP[i] = coef[i] * (x[i] - E[X[i]])`
+- ⚡ O(d) complexity where d is number of features
+- 📈 Support for linear regression and logistic regression
 
 ### `explainer/kernel`
 
 KernelSHAP for model-agnostic explanations:
 
-- Model-agnostic black-box method
-- Weighted linear regression on binary coalition masks
-- SHAP kernel weights: `(d-1) / (C(d,k) * k * (d-k))`
-- Validated against Python SHAP library
+- 🔮 Model-agnostic black-box method
+- ⚖️ Weighted linear regression on binary coalition masks
+- 🧮 SHAP kernel weights: `(d-1) / (C(d,k) * k * (d-k))`
+- ✅ Validated against Python SHAP library
 
 ### `explainer/exact`
 
 ExactSHAP for brute-force exact Shapley values:
 
-- **Mathematically exact** values by enumerating all 2^n coalitions
-- O(n * 2^n) complexity - only practical for ≤15 features
-- Useful for validating other SHAP implementations
-- Reference implementation for small feature sets
+- 🎯 **Mathematically exact** values by enumerating all 2^n coalitions
+- ⏱️ O(n * 2^n) complexity - only practical for ≤15 features
+- 🔍 Useful for validating other SHAP implementations
+- 📐 Reference implementation for small feature sets
 
 ### `explainer/permutation`
 
 Permutation SHAP with antithetic sampling:
 
-- Guarantees local accuracy
-- Supports parallel computation
-- Lower variance than pure Monte Carlo
+- ✅ Guarantees local accuracy
+- 🔄 Supports parallel computation
+- 📉 Lower variance than pure Monte Carlo
 
 ### `explainer/sampling`
 
 Monte Carlo sampling SHAP:
 
-- Simple implementation
-- Good for quick estimates
+- 🛠️ Simple implementation
+- ⚡ Good for quick estimates
 
 ### `masker`
 
 Feature masking strategies:
 
-- `IndependentMasker` - Marginal/independent masking using background samples
+- 🎭 `IndependentMasker` - Marginal/independent masking using background samples
 
 ### `background`
 
 Background dataset management:
 
-- Dataset loading and statistics
-- Random sampling and k-means summarization
+- 📂 Dataset loading and statistics
+- 🎲 Random sampling and k-means summarization
 
 ## Algorithms
 
@@ -313,9 +313,9 @@ Background dataset management:
 The permutation explainer uses antithetic sampling for variance reduction:
 
 1. For each permutation sample:
-   - **Forward pass**: Start with background, add features one by one
-   - **Reverse pass**: Start with instance, remove features one by one
-   - Average contributions from both passes
+   - ▶️ **Forward pass**: Start with background, add features one by one
+   - ◀️ **Reverse pass**: Start with instance, remove features one by one
+   - ⚖️ Average contributions from both passes
 
 2. Average over all permutation samples
 
@@ -325,9 +325,9 @@ This guarantees that SHAP values sum exactly to (prediction - base value).
 
 The sampling explainer uses simple Monte Carlo:
 
-1. Generate random permutations
-2. For each permutation, compute marginal contributions
-3. Average over all samples
+1. 🔀 Generate random permutations
+2. 📊 For each permutation, compute marginal contributions
+3. ⚖️ Average over all samples
 
 ## Configuration Options
 
