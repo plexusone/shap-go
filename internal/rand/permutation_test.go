@@ -7,7 +7,7 @@ import (
 )
 
 func TestPermutation(t *testing.T) {
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests //nolint:gosec // deterministic seed for reproducible tests
 
 	t.Run("length", func(t *testing.T) {
 		for _, n := range []int{0, 1, 5, 10, 100} {
@@ -61,8 +61,8 @@ func TestPermutation(t *testing.T) {
 	})
 
 	t.Run("deterministic_with_seed", func(t *testing.T) {
-		rng1 := rand.New(rand.NewSource(123))
-		rng2 := rand.New(rand.NewSource(123))
+		rng1 := rand.New(rand.NewSource(123)) //nolint:gosec // deterministic seed for reproducible tests
+		rng2 := rand.New(rand.NewSource(123)) //nolint:gosec // deterministic seed for reproducible tests
 
 		perm1 := Permutation(10, rng1)
 		perm2 := Permutation(10, rng2)
@@ -77,7 +77,7 @@ func TestPermutation(t *testing.T) {
 }
 
 func TestCoalition(t *testing.T) {
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
 
 	t.Run("length", func(t *testing.T) {
 		for _, n := range []int{0, 1, 5, 10} {
@@ -132,7 +132,7 @@ func TestCoalition(t *testing.T) {
 }
 
 func TestCoalitionSize(t *testing.T) {
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
 
 	t.Run("exact_size", func(t *testing.T) {
 		for _, tc := range []struct{ n, k int }{
@@ -212,7 +212,7 @@ func TestCoalitionSize(t *testing.T) {
 }
 
 func TestSampleIndices(t *testing.T) {
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
 
 	t.Run("correct_count", func(t *testing.T) {
 		for _, tc := range []struct{ n, k int }{
@@ -266,28 +266,28 @@ func TestSampleIndices(t *testing.T) {
 }
 
 func BenchmarkPermutation(b *testing.B) {
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
 	for i := 0; i < b.N; i++ {
 		Permutation(100, rng)
 	}
 }
 
 func BenchmarkCoalition(b *testing.B) {
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
 	for i := 0; i < b.N; i++ {
 		Coalition(100, 0.5, rng)
 	}
 }
 
 func BenchmarkCoalitionSize(b *testing.B) {
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
 	for i := 0; i < b.N; i++ {
 		CoalitionSize(100, 50, rng)
 	}
 }
 
 func BenchmarkSampleIndices(b *testing.B) {
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
 	for i := 0; i < b.N; i++ {
 		SampleIndices(100, 50, rng)
 	}
