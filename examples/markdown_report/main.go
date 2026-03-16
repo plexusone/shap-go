@@ -4,11 +4,13 @@
 // format, suitable for conversion to PDF, HTML, or other formats.
 //
 // To convert to PDF:
-//   go run main.go > report.md
-//   pandoc report.md -o report.pdf
+//
+//	go run main.go > report.md
+//	pandoc report.md -o report.pdf
 //
 // To convert to HTML:
-//   pandoc report.md -o report.html --standalone
+//
+//	pandoc report.md -o report.html --standalone
 package main
 
 import (

@@ -122,7 +122,7 @@ func TestCoalition(t *testing.T) {
 		}
 
 		// Expected: trials * n * prob = 100 * 1000 * 0.3 = 30000
-		expected := float64(trials * n) * prob
+		expected := float64(trials*n) * prob
 		actual := float64(totalTrue)
 		// Allow 5% deviation
 		if actual < expected*0.95 || actual > expected*1.05 {
