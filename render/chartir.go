@@ -4,97 +4,13 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/grokify/gocharts/v2/charts/chartir"
 	"github.com/plexusone/shap-go/explanation"
 )
 
-// ChartIR represents the intermediate representation for echartify.
-// This is a simplified subset focused on SHAP visualizations.
-type ChartIR struct {
-	Title    string    `json:"title,omitempty"`
-	Datasets []Dataset `json:"datasets"`
-	Marks    []Mark    `json:"marks"`
-	Axes     []Axis    `json:"axes,omitempty"`
-	Legend   *Legend   `json:"legend,omitempty"`
-	Tooltip  *Tooltip  `json:"tooltip,omitempty"`
-	Grid     *Grid     `json:"grid,omitempty"`
-}
-
-// Dataset represents tabular data for the chart.
-type Dataset struct {
-	ID      string     `json:"id"`
-	Columns []Column   `json:"columns"`
-	Rows    [][]string `json:"rows"`
-}
-
-// Column defines a column in the dataset.
-type Column struct {
-	Name string `json:"name"`
-	Type string `json:"type"` // "string" or "number"
-}
-
-// Mark represents a visual mark (series) in the chart.
-type Mark struct {
-	ID        string `json:"id"`
-	DatasetID string `json:"datasetId"`
-	Geometry  string `json:"geometry"` // "line", "bar", "scatter", "area"
-	Encode    Encode `json:"encode"`
-	Stack     string `json:"stack,omitempty"`
-	Style     *Style `json:"style,omitempty"`
-	Name      string `json:"name,omitempty"`
-	Smooth    bool   `json:"smooth,omitempty"`
-}
-
-// Encode defines how data columns map to visual properties.
-type Encode struct {
-	X     string `json:"x,omitempty"`
-	Y     string `json:"y,omitempty"`
-	Value string `json:"value,omitempty"`
-	Name  string `json:"name,omitempty"`
-	Size  string `json:"size,omitempty"`
-	Color string `json:"color,omitempty"`
-}
-
-// Style defines visual styling for marks.
-type Style struct {
-	Color       string  `json:"color,omitempty"`
-	Opacity     float64 `json:"opacity,omitempty"`
-	BorderColor string  `json:"borderColor,omitempty"`
-	BorderWidth float64 `json:"borderWidth,omitempty"`
-}
-
-// Axis defines a chart axis.
-type Axis struct {
-	ID       string   `json:"id"`
-	Type     string   `json:"type"`     // "category", "value", "time", "log"
-	Position string   `json:"position"` // "bottom", "top", "left", "right"
-	Name     string   `json:"name,omitempty"`
-	Min      *float64 `json:"min,omitempty"`
-	Max      *float64 `json:"max,omitempty"`
-}
-
-// Legend defines the chart legend.
-type Legend struct {
-	Show     bool   `json:"show"`
-	Position string `json:"position,omitempty"` // "top", "bottom", "left", "right"
-}
-
-// Tooltip defines tooltip behavior.
-type Tooltip struct {
-	Show    bool   `json:"show"`
-	Trigger string `json:"trigger,omitempty"` // "item", "axis"
-}
-
-// Grid defines chart grid/padding.
-type Grid struct {
-	Left   int `json:"left,omitempty"`
-	Right  int `json:"right,omitempty"`
-	Top    int `json:"top,omitempty"`
-	Bottom int `json:"bottom,omitempty"`
-}
-
 // WaterfallChartIR generates a ChartIR for a waterfall plot showing
 // how features push the prediction from baseline to final value.
-func (r *Renderer) WaterfallChartIR(exp *explanation.Explanation, title string) *ChartIR {
+func (r *Renderer) WaterfallChartIR(exp *explanation.Explanation, title string) *chartir.ChartIR {
 	if title == "" {
 		title = "SHAP Waterfall Plot"
 	}
@@ -127,42 +43,42 @@ func (r *Renderer) WaterfallChartIR(exp *explanation.Explanation, title string) 
 	// End with prediction
 	rows = append(rows, []string{"Prediction", fmt.Sprintf("%.6f", exp.Prediction), "0", fmt.Sprintf("%.6f", exp.Prediction)})
 
-	return &ChartIR{
+	return &chartir.ChartIR{
 		Title: title,
-		Datasets: []Dataset{
+		Datasets: []chartir.Dataset{
 			{
 				ID: "waterfall",
-				Columns: []Column{
-					{Name: "feature", Type: "string"},
-					{Name: "start", Type: "number"},
-					{Name: "contribution", Type: "number"},
-					{Name: "end", Type: "number"},
+				Columns: []chartir.Column{
+					{Name: "feature", Type: chartir.ColumnTypeString},
+					{Name: "start", Type: chartir.ColumnTypeNumber},
+					{Name: "contribution", Type: chartir.ColumnTypeNumber},
+					{Name: "end", Type: chartir.ColumnTypeNumber},
 				},
 				Rows: rows,
 			},
 		},
-		Marks: []Mark{
+		Marks: []chartir.Mark{
 			{
 				ID:        "positive",
 				DatasetID: "waterfall",
-				Geometry:  "bar",
-				Encode:    Encode{X: "contribution", Y: "feature"},
-				Style:     &Style{Color: r.Theme.PositiveColor},
+				Geometry:  chartir.GeometryBar,
+				Encode:    chartir.Encode{X: "contribution", Y: "feature"},
+				Style:     &chartir.Style{Color: r.Theme.PositiveColor},
 				Name:      "Positive",
 			},
 		},
-		Axes: []Axis{
-			{ID: "x", Type: "value", Position: "bottom", Name: "SHAP Value"},
-			{ID: "y", Type: "category", Position: "left", Name: "Feature"},
+		Axes: []chartir.Axis{
+			{ID: "x", Type: chartir.AxisTypeValue, Position: chartir.AxisPositionBottom, Name: "SHAP Value"},
+			{ID: "y", Type: chartir.AxisTypeCategory, Position: chartir.AxisPositionLeft, Name: "Feature"},
 		},
-		Tooltip: &Tooltip{Show: true, Trigger: "axis"},
-		Grid:    &Grid{Left: 120, Right: 40, Top: 60, Bottom: 40},
+		Tooltip: &chartir.Tooltip{Show: true, Trigger: chartir.TooltipTriggerAxis},
+		Grid:    &chartir.Grid{Left: "120", Right: "40", Top: "60", Bottom: "40"},
 	}
 }
 
 // FeatureImportanceChartIR generates a ChartIR for a feature importance bar chart
 // showing mean absolute SHAP values.
-func (r *Renderer) FeatureImportanceChartIR(es *ExplanationSet, title string, topN int) *ChartIR {
+func (r *Renderer) FeatureImportanceChartIR(es *ExplanationSet, title string, topN int) *chartir.ChartIR {
 	if title == "" {
 		title = "SHAP Feature Importance"
 	}
@@ -196,45 +112,45 @@ func (r *Renderer) FeatureImportanceChartIR(es *ExplanationSet, title string, to
 		rows[i] = []string{f.name, fmt.Sprintf("%.6f", f.importance)}
 	}
 
-	return &ChartIR{
+	return &chartir.ChartIR{
 		Title: title,
-		Datasets: []Dataset{
+		Datasets: []chartir.Dataset{
 			{
 				ID: "importance",
-				Columns: []Column{
-					{Name: "feature", Type: "string"},
-					{Name: "importance", Type: "number"},
+				Columns: []chartir.Column{
+					{Name: "feature", Type: chartir.ColumnTypeString},
+					{Name: "importance", Type: chartir.ColumnTypeNumber},
 				},
 				Rows: rows,
 			},
 		},
-		Marks: []Mark{
+		Marks: []chartir.Mark{
 			{
 				ID:        "bars",
 				DatasetID: "importance",
-				Geometry:  "bar",
-				Encode:    Encode{X: "importance", Y: "feature"},
-				Style:     &Style{Color: r.Theme.PositiveColor},
+				Geometry:  chartir.GeometryBar,
+				Encode:    chartir.Encode{X: "importance", Y: "feature"},
+				Style:     &chartir.Style{Color: r.Theme.PositiveColor},
 			},
 		},
-		Axes: []Axis{
-			{ID: "x", Type: "value", Position: "bottom", Name: "mean(|SHAP value|)"},
-			{ID: "y", Type: "category", Position: "left"},
+		Axes: []chartir.Axis{
+			{ID: "x", Type: chartir.AxisTypeValue, Position: chartir.AxisPositionBottom, Name: "mean(|SHAP value|)"},
+			{ID: "y", Type: chartir.AxisTypeCategory, Position: chartir.AxisPositionLeft},
 		},
-		Tooltip: &Tooltip{Show: true, Trigger: "axis"},
-		Grid:    &Grid{Left: 120, Right: 40, Top: 60, Bottom: 40},
+		Tooltip: &chartir.Tooltip{Show: true, Trigger: chartir.TooltipTriggerAxis},
+		Grid:    &chartir.Grid{Left: "120", Right: "40", Top: "60", Bottom: "40"},
 	}
 }
 
 // SummaryChartIR generates a ChartIR for a SHAP summary scatter plot
 // showing SHAP value distribution across all predictions.
-func (r *Renderer) SummaryChartIR(es *ExplanationSet, title string) *ChartIR {
+func (r *Renderer) SummaryChartIR(es *ExplanationSet, title string) *chartir.ChartIR {
 	if title == "" {
 		title = "SHAP Summary Plot"
 	}
 
 	if len(es.Explanations) == 0 {
-		return &ChartIR{Title: title}
+		return &chartir.ChartIR{Title: title}
 	}
 
 	// Compute mean absolute SHAP for ordering
@@ -277,48 +193,48 @@ func (r *Renderer) SummaryChartIR(es *ExplanationSet, title string) *ChartIR {
 		featureNames[i] = f.name
 	}
 
-	return &ChartIR{
+	return &chartir.ChartIR{
 		Title: title,
-		Datasets: []Dataset{
+		Datasets: []chartir.Dataset{
 			{
 				ID: "summary",
-				Columns: []Column{
-					{Name: "feature_idx", Type: "number"},
-					{Name: "shap_value", Type: "number"},
-					{Name: "feature_value", Type: "number"},
+				Columns: []chartir.Column{
+					{Name: "feature_idx", Type: chartir.ColumnTypeNumber},
+					{Name: "shap_value", Type: chartir.ColumnTypeNumber},
+					{Name: "feature_value", Type: chartir.ColumnTypeNumber},
 				},
 				Rows: rows,
 			},
 		},
-		Marks: []Mark{
+		Marks: []chartir.Mark{
 			{
 				ID:        "scatter",
 				DatasetID: "summary",
-				Geometry:  "scatter",
-				Encode: Encode{
+				Geometry:  chartir.GeometryScatter,
+				Encode: chartir.Encode{
 					X:     "shap_value",
 					Y:     "feature_idx",
 					Color: "feature_value",
 				},
 			},
 		},
-		Axes: []Axis{
-			{ID: "x", Type: "value", Position: "bottom", Name: "SHAP value"},
-			{ID: "y", Type: "category", Position: "left"},
+		Axes: []chartir.Axis{
+			{ID: "x", Type: chartir.AxisTypeValue, Position: chartir.AxisPositionBottom, Name: "SHAP value"},
+			{ID: "y", Type: chartir.AxisTypeCategory, Position: chartir.AxisPositionLeft},
 		},
-		Tooltip: &Tooltip{Show: true, Trigger: "item"},
+		Tooltip: &chartir.Tooltip{Show: true, Trigger: chartir.TooltipTriggerItem},
 	}
 }
 
 // DependenceChartIR generates a ChartIR for a SHAP dependence plot
 // showing how a feature's value relates to its SHAP contribution.
-func (r *Renderer) DependenceChartIR(es *ExplanationSet, featureName string, title string) *ChartIR {
+func (r *Renderer) DependenceChartIR(es *ExplanationSet, featureName string, title string) *chartir.ChartIR {
 	if title == "" {
 		title = fmt.Sprintf("SHAP Dependence: %s", featureName)
 	}
 
 	if len(es.Explanations) == 0 {
-		return &ChartIR{Title: title}
+		return &chartir.ChartIR{Title: title}
 	}
 
 	// Build scatter data: feature value, SHAP value
@@ -338,35 +254,37 @@ func (r *Renderer) DependenceChartIR(es *ExplanationSet, featureName string, tit
 		})
 	}
 
-	return &ChartIR{
+	opacity := 0.6
+
+	return &chartir.ChartIR{
 		Title: title,
-		Datasets: []Dataset{
+		Datasets: []chartir.Dataset{
 			{
 				ID: "dependence",
-				Columns: []Column{
-					{Name: "feature_value", Type: "number"},
-					{Name: "shap_value", Type: "number"},
+				Columns: []chartir.Column{
+					{Name: "feature_value", Type: chartir.ColumnTypeNumber},
+					{Name: "shap_value", Type: chartir.ColumnTypeNumber},
 				},
 				Rows: rows,
 			},
 		},
-		Marks: []Mark{
+		Marks: []chartir.Mark{
 			{
 				ID:        "scatter",
 				DatasetID: "dependence",
-				Geometry:  "scatter",
-				Encode: Encode{
+				Geometry:  chartir.GeometryScatter,
+				Encode: chartir.Encode{
 					X: "feature_value",
 					Y: "shap_value",
 				},
-				Style: &Style{Color: r.Theme.PositiveColor, Opacity: 0.6},
+				Style: &chartir.Style{Color: r.Theme.PositiveColor, Opacity: &opacity},
 			},
 		},
-		Axes: []Axis{
-			{ID: "x", Type: "value", Position: "bottom", Name: featureName},
-			{ID: "y", Type: "value", Position: "left", Name: "SHAP value"},
+		Axes: []chartir.Axis{
+			{ID: "x", Type: chartir.AxisTypeValue, Position: chartir.AxisPositionBottom, Name: featureName},
+			{ID: "y", Type: chartir.AxisTypeValue, Position: chartir.AxisPositionLeft, Name: "SHAP value"},
 		},
-		Tooltip: &Tooltip{Show: true, Trigger: "item"},
+		Tooltip: &chartir.Tooltip{Show: true, Trigger: chartir.TooltipTriggerItem},
 	}
 }
 

@@ -1,2 +1,4 @@
+github.com/grokify/gocharts/v2 v2.26.10-0.20260316002803-2ad92fca4d35 h1:s6Kzs7p762iPjt/2USRaMqNQgKSxbAvuQJE86DoZWjk=
+github.com/grokify/gocharts/v2 v2.26.10-0.20260316002803-2ad92fca4d35/go.mod h1:G06ya+bzKPSUluyJsmS/NV7ZJDH/M+Osc7wXw0jEkM4=
 github.com/yalue/onnxruntime_go v1.27.0 h1:c1YSgDNtpf0WGtxj3YeRIb8VC5LmM1J+Ve3uHdteC1U=
 github.com/yalue/onnxruntime_go v1.27.0/go.mod h1:b4X26A8pekNb1ACJ58wAXgNKeUCGEAQ9dmACut9Sm/4=

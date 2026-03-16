@@ -1,5 +1,7 @@
 module github.com/plexusone/shap-go
 
-go 1.23.0
+go 1.25.0
 
 require github.com/yalue/onnxruntime_go v1.27.0
+
+require github.com/grokify/gocharts/v2 v2.26.10-0.20260316002803-2ad92fca4d35

@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/grokify/gocharts/v2/charts/chartir"
 	"github.com/plexusone/shap-go/explainer"
 	"github.com/plexusone/shap-go/explainer/permutation"
 	"github.com/plexusone/shap-go/explanation"
@@ -104,7 +105,7 @@ func main() {
 	fmt.Println(output)
 }
 
-func printChartSummary(chart *render.ChartIR) {
+func printChartSummary(chart *chartir.ChartIR) {
 	fmt.Printf("Title: %s\n", chart.Title)
 	fmt.Printf("Datasets: %d\n", len(chart.Datasets))
 	if len(chart.Datasets) > 0 {
