@@ -7,16 +7,19 @@
 - [x] SamplingSHAP (Monte Carlo)
 - [x] LinearSHAP - exact closed-form SHAP for linear models
 - [x] KernelSHAP - model-agnostic weighted linear regression (validated against Python SHAP)
+- [x] ExactSHAP - brute-force exact Shapley values (O(n*2^n), validated against mathematical derivations)
 - [x] ONNX Runtime integration
 - [x] Render package (ChartIR visualizations)
 - [x] MkDocs documentation site
 - [x] CI/CD workflows (tests, lint, docs deployment)
 - [x] Benchmarks
-- [x] Examples (linear, treeshap, sampling, batch, visualization, linearshap, kernelshap)
+- [x] Examples (linear, treeshap, sampling, batch, visualization, linearshap, kernelshap, markdown_report)
 - [x] Fix masker panics (return errors instead)
 - [x] Add ONNX tests
 - [x] Python validation documentation - testing methodology docs
 - [x] Explainers overview page - comparison and decision guide
+- [x] Add internal/rand tests (v0.3.0)
+- [x] Update README to mark KernelSHAP and ExactSHAP as complete (v0.3.0)
 
 ## In Progress
 
@@ -24,8 +27,6 @@
 
 ### High Priority
 
-- [ ] Add internal/rand tests (0% coverage)
-- [ ] Update README to mark KernelSHAP as complete
 - [ ] Improve model/onnx coverage (currently 8%)
 
 ### Feature Enhancements
@@ -48,7 +49,6 @@
 - [ ] DeepSHAP - neural network explanations (combines DeepLIFT with Shapley)
 - [ ] GradientSHAP - expected gradients for neural networks
 - [ ] PartitionSHAP - hierarchical clustering for correlated features
-- [ ] ExactSHAP - brute-force exact computation (2^n complexity)
 
 ### Infrastructure
 
@@ -62,13 +62,14 @@
 | Package | Coverage |
 |---------|----------|
 | background | 90.2% |
+| explainer/exact | ~85% |
 | explainer/kernel | 86.9% |
 | explainer/linear | 96.6% |
 | explainer/permutation | 89.3% |
 | explainer/sampling | 92.3% |
 | explainer/tree | 84.4% |
 | explanation | 93.3% |
-| internal/rand | 0.0% |
+| internal/rand | ~80% |
 | masker | 98.0% |
 | model | 100.0% |
 | model/onnx | 8.0% |
