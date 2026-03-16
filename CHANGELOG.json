@@ -7,6 +7,46 @@
   "maintainers": ["plexusone"],
   "releases": [
     {
+      "version": "v0.3.0",
+      "date": "2025-03-15",
+      "highlights": [
+        { "description": "KernelSHAP explainer - model-agnostic SHAP values using weighted linear regression" },
+        { "description": "ExactSHAP explainer - brute-force exact Shapley values for small feature sets" },
+        { "description": "Markdown report generation example for documentation and compliance" },
+        { "description": "Upgraded to gocharts v2.27.0 with ChartIR refactoring" }
+      ],
+      "added": [
+        { "description": "KernelSHAP explainer (`explainer/kernel`) with SHAP kernel weights", "commit": "ce314a0" },
+        { "description": "ExactSHAP explainer (`explainer/exact`) with O(n*2^n) brute-force algorithm" },
+        { "description": "KernelSHAP example (`examples/kernelshap`)", "commit": "7a67815" },
+        { "description": "Markdown report example (`examples/markdown_report`)", "commit": "7a67815" }
+      ],
+      "changed": [
+        { "description": "Refactor render package to use `gocharts/v2/charts/chartir` for ChartIR types", "commit": "4e79375" }
+      ],
+      "fixed": [
+        { "description": "Add nolint:gosec directives for deterministic test seeds", "commit": "d23e6d8" },
+        { "description": "Fix gofmt formatting issues", "commit": "f0083ba" }
+      ],
+      "documentation": [
+        { "description": "KernelSHAP explainer guide and overview documentation", "commit": "0183286" },
+        { "description": "ExactSHAP explainer guide with complexity analysis" }
+      ],
+      "tests": [
+        { "description": "Comprehensive tests for `internal/rand` package", "commit": "d2b0679" },
+        { "description": "Python SHAP validation test data for KernelSHAP", "commit": "ce314a0" },
+        { "description": "ExactSHAP tests including linear, nonlinear, and edge cases" },
+        { "description": "ExactSHAP comparison tests with mathematically verified Shapley values" }
+      ],
+      "infrastructure": [
+        { "description": "Add KernelSHAP tests to CI workflow", "commit": "8731544" }
+      ],
+      "build": [
+        { "description": "Upgrade gocharts dependency to v2.27.0", "commit": "0ea65d4" },
+        { "description": "Add TASKS.md and update .gitignore", "commit": "19fdd3f" }
+      ]
+    },
+    {
       "version": "v0.2.0",
       "date": "2025-03-14",
       "highlights": [
