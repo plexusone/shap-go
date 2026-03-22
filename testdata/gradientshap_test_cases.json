@@ -1,0 +1,179 @@
+{
+  "version": "1.0",
+  "description": "GradientSHAP test cases with analytically derived expected values",
+  "note": "For linear models f(x) = w·x + b, GradientSHAP values should equal w_i * (x_i - E[x_background_i]). For nonlinear models, we verify local accuracy and directional consistency.",
+  "generated_by": "analytical derivation",
+  "test_suites": [
+    {
+      "name": "linear_model",
+      "description": "Linear model: f(x) = 2*x0 + 3*x1 + x2, background centered at [0.5, 0.5, 0.5]",
+      "model": {
+        "type": "linear",
+        "target_function": "2*x0 + 3*x1 + x2",
+        "weights": [2.0, 3.0, 1.0],
+        "bias": 0.0
+      },
+      "background": [
+        [0.0, 0.0, 0.0],
+        [1.0, 1.0, 1.0]
+      ],
+      "base_value": 3.0,
+      "cases": [
+        {
+          "name": "origin",
+          "instance": [0.0, 0.0, 0.0],
+          "prediction": 0.0,
+          "shap_values": [-1.0, -1.5, -0.5],
+          "comment": "SHAP = w * (x - 0.5): [2*(-0.5), 3*(-0.5), 1*(-0.5)]"
+        },
+        {
+          "name": "center",
+          "instance": [0.5, 0.5, 0.5],
+          "prediction": 3.0,
+          "shap_values": [0.0, 0.0, 0.0],
+          "comment": "At background mean, SHAP values are zero"
+        },
+        {
+          "name": "all_ones",
+          "instance": [1.0, 1.0, 1.0],
+          "prediction": 6.0,
+          "shap_values": [1.0, 1.5, 0.5],
+          "comment": "SHAP = w * (x - 0.5): [2*(0.5), 3*(0.5), 1*(0.5)]"
+        },
+        {
+          "name": "x0_only",
+          "instance": [2.0, 0.5, 0.5],
+          "prediction": 7.0,
+          "shap_values": [3.0, 0.0, 0.0],
+          "comment": "Only x0 differs from mean: 2*(2.0-0.5) = 3.0"
+        },
+        {
+          "name": "x1_only",
+          "instance": [0.5, 2.0, 0.5],
+          "prediction": 7.5,
+          "shap_values": [0.0, 4.5, 0.0],
+          "comment": "Only x1 differs from mean: 3*(2.0-0.5) = 4.5"
+        }
+      ]
+    },
+    {
+      "name": "two_features",
+      "description": "Simple 2-feature linear model: f(x) = x0 + x1, background at [0, 0]",
+      "model": {
+        "type": "linear",
+        "target_function": "x0 + x1",
+        "weights": [1.0, 1.0],
+        "bias": 0.0
+      },
+      "background": [
+        [0.0, 0.0]
+      ],
+      "base_value": 0.0,
+      "cases": [
+        {
+          "name": "origin",
+          "instance": [0.0, 0.0],
+          "prediction": 0.0,
+          "shap_values": [0.0, 0.0],
+          "comment": "At background, SHAP values are zero"
+        },
+        {
+          "name": "x0_only",
+          "instance": [1.0, 0.0],
+          "prediction": 1.0,
+          "shap_values": [1.0, 0.0],
+          "comment": "x0 contributes 1.0"
+        },
+        {
+          "name": "x1_only",
+          "instance": [0.0, 1.0],
+          "prediction": 1.0,
+          "shap_values": [0.0, 1.0],
+          "comment": "x1 contributes 1.0"
+        },
+        {
+          "name": "both",
+          "instance": [1.0, 1.0],
+          "prediction": 2.0,
+          "shap_values": [1.0, 1.0],
+          "comment": "Both contribute equally"
+        }
+      ]
+    },
+    {
+      "name": "quadratic_model",
+      "description": "Quadratic model: f(x) = x0^2 + 2*x1 + x0*x2. SHAP values verified via local accuracy.",
+      "model": {
+        "type": "polynomial",
+        "target_function": "x0^2 + 2*x1 + x0*x2"
+      },
+      "background": [
+        [0.0, 0.0, 0.0],
+        [1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [1.0, 1.0, 1.0]
+      ],
+      "base_value": 1.25,
+      "cases": [
+        {
+          "name": "origin",
+          "instance": [0.0, 0.0, 0.0],
+          "prediction": 0.0,
+          "shap_values": [-0.5, -1.0, 0.25],
+          "comment": "Approximate - verify local accuracy"
+        },
+        {
+          "name": "all_ones",
+          "instance": [1.0, 1.0, 1.0],
+          "prediction": 4.0,
+          "shap_values": [1.5, 1.0, 0.25],
+          "comment": "Approximate - verify local accuracy"
+        },
+        {
+          "name": "x0_dominant",
+          "instance": [2.0, 0.0, 0.0],
+          "prediction": 4.0,
+          "shap_values": [3.75, -1.0, 0.0],
+          "comment": "x0 should be most important"
+        }
+      ]
+    },
+    {
+      "name": "sinusoidal_model",
+      "description": "Model with sin: f(x) = sin(x0) + 2*x1. SHAP values verified via local accuracy.",
+      "model": {
+        "type": "transcendental",
+        "target_function": "sin(x0) + 2*x1"
+      },
+      "background": [
+        [0.0, 0.0],
+        [1.0, 0.0],
+        [0.0, 1.0]
+      ],
+      "base_value": 0.947,
+      "cases": [
+        {
+          "name": "origin",
+          "instance": [0.0, 0.0],
+          "prediction": 0.0,
+          "shap_values": [-0.28, -0.67],
+          "comment": "Approximate - verify local accuracy"
+        },
+        {
+          "name": "sin_peak",
+          "instance": [1.5708, 0.0],
+          "prediction": 1.0,
+          "shap_values": [0.72, -0.67],
+          "comment": "At pi/2, sin(x0) = 1"
+        },
+        {
+          "name": "x1_dominant",
+          "instance": [0.0, 2.0],
+          "prediction": 4.0,
+          "shap_values": [-0.28, 3.33],
+          "comment": "x1 should dominate"
+        }
+      ]
+    }
+  ]
+}
