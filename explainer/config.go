@@ -27,6 +27,20 @@ type Config struct {
 	// FeatureNames are the names of the input features.
 	// If not provided, features are named "feature_0", "feature_1", etc.
 	FeatureNames []string
+
+	// ConfidenceLevel specifies the confidence level for computing
+	// confidence intervals on SHAP values (e.g., 0.95 for 95% CI).
+	// If 0, confidence intervals are not computed.
+	// Only applies to sampling-based methods (sampling, permutation).
+	// Default: 0 (disabled)
+	ConfidenceLevel float64
+
+	// UseBatchedPredictions enables batched model predictions for efficiency.
+	// When true, explainers will use PredictBatch instead of individual Predict
+	// calls where possible. This can significantly improve performance when
+	// the model has optimized batch inference (e.g., neural networks).
+	// Default: false
+	UseBatchedPredictions bool
 }
 
 // DefaultConfig returns the default configuration.
@@ -127,9 +141,54 @@ func WithFeatureNames(names []string) Option {
 	}
 }
 
+// WithConfidenceLevel sets the confidence level for computing confidence intervals.
+// Common values are 0.90 (90%), 0.95 (95%), and 0.99 (99%).
+// Set to 0 to disable confidence interval computation (default).
+func WithConfidenceLevel(level float64) Option {
+	return func(c *Config) {
+		c.ConfidenceLevel = level
+	}
+}
+
+// WithBatchedPredictions enables batched model predictions for efficiency.
+// When enabled, explainers use PredictBatch instead of individual Predict calls
+// where possible. This can significantly improve performance for models with
+// optimized batch inference (e.g., neural networks, ONNX models).
+func WithBatchedPredictions(enabled bool) Option {
+	return func(c *Config) {
+		c.UseBatchedPredictions = enabled
+	}
+}
+
 // ApplyOptions applies the given options to a config.
 func ApplyOptions(config *Config, opts ...Option) {
 	for _, opt := range opts {
 		opt(config)
+	}
+}
+
+// ZScoreForConfidenceLevel returns the z-score for a given confidence level.
+// Uses common values for standard confidence levels and approximates others.
+func ZScoreForConfidenceLevel(level float64) float64 {
+	// Common z-scores for standard confidence levels
+	switch {
+	case level >= 0.999:
+		return 3.291 // 99.9%
+	case level >= 0.99:
+		return 2.576 // 99%
+	case level >= 0.975:
+		return 2.241 // 97.5%
+	case level >= 0.95:
+		return 1.960 // 95%
+	case level >= 0.90:
+		return 1.645 // 90%
+	case level >= 0.85:
+		return 1.440 // 85%
+	case level >= 0.80:
+		return 1.282 // 80%
+	default:
+		// For other values, use a simple approximation
+		// This is not perfectly accurate but handles edge cases
+		return 1.960 // Default to 95%
 	}
 }
