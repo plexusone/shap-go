@@ -7,6 +7,107 @@
   "maintainers": ["plexusone"],
   "releases": [
     {
+      "version": "v0.5.0",
+      "date": "",
+      "highlights": [
+        { "description": "GradientSHAP explainer - Expected Gradients method using numerical differentiation" },
+        { "description": "Confidence intervals for sampling-based SHAP methods with configurable confidence levels" },
+        { "description": "CatBoost model support - parse CatBoost JSON models for TreeSHAP" },
+        { "description": "ONNX-ML TreeEnsemble parser - load tree models directly from ONNX format" },
+        { "description": "Parallel batch explanation API - explain multiple instances efficiently across workers" },
+        { "description": "Multi-class classification example demonstrating per-class SHAP explanations" },
+        { "description": "PartitionSHAP explainer - hierarchical Owen values for feature groupings" },
+        { "description": "AdditiveSHAP explainer - exact SHAP for Generalized Additive Models (GAMs)" },
+        { "description": "Background data selection guide for optimal baseline computation" }
+      ],
+      "added": [
+        { "description": "GradientSHAP explainer (`explainer/gradient`) with Expected Gradients algorithm" },
+        { "description": "Numerical gradient computation using central finite differences" },
+        { "description": "GradientSHAP configuration options (WithEpsilon, WithNoiseStdev, WithLocalSmoothing)" },
+        { "description": "Confidence intervals for SamplingSHAP, PermutationSHAP, and GradientSHAP via `WithConfidenceLevel()`" },
+        { "description": "ConfidenceIntervals type in explanation package with Lower, Upper, StandardErrors" },
+        { "description": "GetConfidenceInterval() and HasConfidenceIntervals() helper methods" },
+        { "description": "ZScoreForConfidenceLevel() helper for common confidence levels (90%, 95%, 99%)" },
+        { "description": "CatBoost JSON model parser (`ParseCatBoostJSON`, `LoadCatBoostModel`)" },
+        { "description": "Support for CatBoost oblivious (symmetric) trees with float and categorical features" },
+        { "description": "ONNX-ML TreeEnsemble parser (`ParseONNXTreeEnsemble`, `ParseONNXTreeEnsembleFromBytes`)" },
+        { "description": "Support for TreeEnsembleRegressor and TreeEnsembleClassifier ONNX-ML operators" },
+        { "description": "ExplainBatchParallel() generic parallel batch function for any explainer" },
+        { "description": "ExplainBatchWithProgress() batch function with progress callback" },
+        { "description": "BatchConfig with Workers and StopOnError options" },
+        { "description": "Multi-class classification example (`examples/multiclass`)" },
+        { "description": "GradientSHAP example (`examples/gradientshap`)" },
+        { "description": "PartitionSHAP explainer (`explainer/partition`) with hierarchical Owen values" },
+        { "description": "Node type for defining feature hierarchies" },
+        { "description": "Flat mode fallback when no hierarchy is provided" },
+        { "description": "AdditiveSHAP explainer (`explainer/additive`) for Generalized Additive Models" },
+        { "description": "Exact SHAP computation for additive models with O(n×b) complexity" },
+        { "description": "Background data selection guide (`docs/guides/background-data.md`)" },
+        { "description": "`WithBatchedPredictions()` config option for efficient batched model inference" },
+        { "description": "Batched coalition evaluation in KernelSHAP, ExactSHAP, and PartitionSHAP" }
+      ],
+      "tests": [
+        { "description": "GradientSHAP tests (linear, nonlinear, parallel, confidence intervals, gradient accuracy)" },
+        { "description": "GradientSHAP validation tests with analytically derived expected values" },
+        { "description": "Confidence interval tests for sampling and permutation explainers" },
+        { "description": "CatBoost parser tests (simple, single leaf, multiple trees, depth 3, categorical)" },
+        { "description": "ONNX-ML tree parser tests (simple, multiple trees, end-to-end with TreeSHAP)" },
+        { "description": "Parallel batch tests (basic, progress, error handling, context cancellation)" },
+        { "description": "PartitionSHAP tests (hierarchy validation, local accuracy, flat mode, batch)" },
+        { "description": "ONNX graph parsing tests with protobuf model construction" },
+        { "description": "Additional activation session tests for helper methods" },
+        { "description": "Batched prediction tests for KernelSHAP, ExactSHAP, and PartitionSHAP" },
+        { "description": "AdditiveSHAP tests (linear, nonlinear, single feature, batch, error handling)" }
+      ],
+      "documentation": [
+        { "description": "PartitionSHAP explainer guide (`docs/explainers/partitionshap.md`)" },
+        { "description": "AdditiveSHAP explainer guide (`docs/explainers/additiveshap.md`)" },
+        { "description": "Background data selection guide (`docs/guides/background-data.md`)" },
+        { "description": "Updated explainer overview with PartitionSHAP and AdditiveSHAP" }
+      ]
+    },
+    {
+      "version": "v0.4.0",
+      "date": "",
+      "highlights": [
+        { "description": "DeepSHAP explainer - efficient SHAP values for neural networks using DeepLIFT" },
+        { "description": "TreeSHAP interaction values - pairwise feature interaction computation" },
+        { "description": "ONNX graph parsing for intermediate layer access" },
+        { "description": "ActivationSession for capturing neural network layer activations" }
+      ],
+      "added": [
+        { "description": "DeepSHAP explainer (`explainer/deepshap`) with DeepLIFT rescale rule" },
+        { "description": "TreeSHAP interaction values via `ExplainInteractions()` method" },
+        { "description": "InteractionResult type with symmetric interaction matrix and helper methods" },
+        { "description": "LightGBM text format parser (`ParseLightGBMText`, `LoadLightGBMTextModel`)" },
+        { "description": "ONNX graph parsing (`model/onnx/graph.go`) using gonnx protobuf" },
+        { "description": "ActivationSession (`model/onnx/activation_session.go`) for intermediate output capture" },
+        { "description": "ONNX types (`model/onnx/types.go`) for LayerType, NodeInfo, GraphInfo" },
+        { "description": "Attribution rules for Dense, ReLU, Sigmoid, Tanh, Softmax, Add, Identity layers" },
+        { "description": "Backward propagation engine for DeepSHAP attribution" },
+        { "description": "ONNX basic example (`examples/onnx_basic`) with KernelSHAP" },
+        { "description": "DeepSHAP example (`examples/deepshap`) with neural network MLP" }
+      ],
+      "documentation": [
+        { "description": "DeepSHAP explainer guide (`docs/explainers/deepshap.md`)" },
+        { "description": "Updated explainer overview with DeepSHAP" },
+        { "description": "Updated README with DeepSHAP in implemented list" }
+      ],
+      "tests": [
+        { "description": "ONNX graph parsing tests" },
+        { "description": "ActivationSession tests" },
+        { "description": "Attribution rule tests with analytical solutions" },
+        { "description": "Propagation engine tests" },
+        { "description": "DeepSHAP explainer unit tests" },
+        { "description": "TreeSHAP interaction value tests (symmetry, SHAP consistency, local accuracy)" },
+        { "description": "LightGBM text parser tests (simple, multiple trees, deeper trees, edge cases)" },
+        { "description": "ONNX types tests (GraphInfo methods, LayerType mapping, Config defaults)" }
+      ],
+      "build": [
+        { "description": "Add gonnx dependency (`github.com/advancedclimatesystems/gonnx@v1.1.0`)" }
+      ]
+    },
+    {
       "version": "v0.3.0",
       "date": "2025-03-15",
       "highlights": [
