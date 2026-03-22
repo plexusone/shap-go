@@ -363,3 +363,142 @@ func TestNew_Errors(t *testing.T) {
 		})
 	}
 }
+
+func TestPermutationExplainer_ConfidenceIntervals(t *testing.T) {
+	fm := model.NewFuncModel(linearModel, 2)
+	background := [][]float64{{0.0, 0.0}}
+
+	// Create explainer with confidence intervals enabled
+	exp, err := New(fm, background,
+		explainer.WithNumSamples(200),
+		explainer.WithSeed(42),
+		explainer.WithConfidenceLevel(0.95),
+	)
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	ctx := context.Background()
+	explanation, err := exp.Explain(ctx, []float64{1.0, 2.0})
+	if err != nil {
+		t.Fatalf("Explain() error = %v", err)
+	}
+
+	// Check that confidence intervals are present
+	if !explanation.HasConfidenceIntervals() {
+		t.Fatal("Expected confidence intervals to be present")
+	}
+
+	ci := explanation.Metadata.ConfidenceIntervals
+	if ci.Level != 0.95 {
+		t.Errorf("Confidence level = %f, want 0.95", ci.Level)
+	}
+
+	// Check that intervals are computed for all features
+	for _, name := range exp.FeatureNames() {
+		lower, ok := ci.Lower[name]
+		if !ok {
+			t.Errorf("Missing lower bound for %s", name)
+		}
+		upper, ok := ci.Upper[name]
+		if !ok {
+			t.Errorf("Missing upper bound for %s", name)
+		}
+		se, ok := ci.StandardErrors[name]
+		if !ok {
+			t.Errorf("Missing standard error for %s", name)
+		}
+
+		// Lower should be less than or equal to upper
+		if lower > upper {
+			t.Errorf("Lower bound %f > upper bound %f for %s", lower, upper, name)
+		}
+
+		// SHAP value should be within the interval
+		shapVal := explanation.Values[name]
+		if shapVal < lower || shapVal > upper {
+			t.Errorf("SHAP value %f not in interval [%f, %f] for %s",
+				shapVal, lower, upper, name)
+		}
+
+		// Standard error should be non-negative
+		if se < 0 {
+			t.Errorf("Standard error %f is negative for %s", se, name)
+		}
+	}
+
+	// Test GetConfidenceInterval helper
+	lower, upper, ok := explanation.GetConfidenceInterval("feature_0")
+	if !ok {
+		t.Error("GetConfidenceInterval returned false for feature_0")
+	}
+	if lower != ci.Lower["feature_0"] || upper != ci.Upper["feature_0"] {
+		t.Error("GetConfidenceInterval values don't match")
+	}
+}
+
+func TestPermutationExplainer_ConfidenceIntervals_Parallel(t *testing.T) {
+	fm := model.NewFuncModel(linearModel, 2)
+	background := [][]float64{{0.0, 0.0}}
+
+	// Test confidence intervals with parallel workers
+	exp, err := New(fm, background,
+		explainer.WithNumSamples(200),
+		explainer.WithSeed(42),
+		explainer.WithConfidenceLevel(0.95),
+		explainer.WithNumWorkers(4),
+	)
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	ctx := context.Background()
+	explanation, err := exp.Explain(ctx, []float64{1.0, 2.0})
+	if err != nil {
+		t.Fatalf("Explain() error = %v", err)
+	}
+
+	// Check that confidence intervals are present
+	if !explanation.HasConfidenceIntervals() {
+		t.Fatal("Expected confidence intervals to be present with parallel workers")
+	}
+
+	ci := explanation.Metadata.ConfidenceIntervals
+	if ci.Level != 0.95 {
+		t.Errorf("Confidence level = %f, want 0.95", ci.Level)
+	}
+
+	// Verify structure
+	if len(ci.Lower) != 2 || len(ci.Upper) != 2 || len(ci.StandardErrors) != 2 {
+		t.Errorf("Unexpected CI map sizes: lower=%d, upper=%d, se=%d",
+			len(ci.Lower), len(ci.Upper), len(ci.StandardErrors))
+	}
+}
+
+func TestPermutationExplainer_NoConfidenceIntervals(t *testing.T) {
+	fm := model.NewFuncModel(linearModel, 2)
+	background := [][]float64{{0.0, 0.0}}
+
+	// Create explainer WITHOUT confidence intervals (default)
+	exp, err := New(fm, background,
+		explainer.WithNumSamples(100),
+		explainer.WithSeed(42),
+	)
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	ctx := context.Background()
+	explanation, err := exp.Explain(ctx, []float64{1.0, 2.0})
+	if err != nil {
+		t.Fatalf("Explain() error = %v", err)
+	}
+
+	// Check that confidence intervals are NOT present
+	if explanation.HasConfidenceIntervals() {
+		t.Error("Expected no confidence intervals when not configured")
+	}
+	if explanation.Metadata.ConfidenceIntervals != nil {
+		t.Error("ConfidenceIntervals should be nil when not configured")
+	}
+}

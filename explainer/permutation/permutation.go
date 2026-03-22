@@ -4,6 +4,7 @@ package permutation
 import (
 	"context"
 	"fmt"
+	"math"
 	"math/rand"
 	"sync"
 	"time"
@@ -95,11 +96,11 @@ func (e *Explainer) Explain(ctx context.Context, instance []float64) (*explanati
 	}
 
 	// Compute SHAP values
-	var shapValues []float64
+	var shapResult *shapResult
 	if e.config.NumWorkers > 1 {
-		shapValues, err = e.computeSHAPValuesParallel(ctx, instance)
+		shapResult, err = e.computeSHAPValuesParallel(ctx, instance)
 	} else {
-		shapValues, err = e.computeSHAPValues(ctx, instance)
+		shapResult, err = e.computeSHAPValues(ctx, instance)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to compute SHAP values: %w", err)
@@ -109,7 +110,7 @@ func (e *Explainer) Explain(ctx context.Context, instance []float64) (*explanati
 	values := make(map[string]float64)
 	featureValues := make(map[string]float64)
 	for i, name := range e.featureNames {
-		values[name] = shapValues[i]
+		values[name] = shapResult.values[i]
 		featureValues[name] = instance[i]
 	}
 
@@ -127,6 +128,30 @@ func (e *Explainer) Explain(ctx context.Context, instance []float64) (*explanati
 			BackgroundSize: len(e.background),
 			ComputeTimeMS:  time.Since(startTime).Milliseconds(),
 		},
+	}
+
+	// Add confidence intervals if enabled
+	if e.config.ConfidenceLevel > 0 && shapResult.standardErrors != nil {
+		zScore := explainer.ZScoreForConfidenceLevel(e.config.ConfidenceLevel)
+		lower := make(map[string]float64)
+		upper := make(map[string]float64)
+		stdErrs := make(map[string]float64)
+
+		for i, name := range e.featureNames {
+			se := shapResult.standardErrors[i]
+			mean := shapResult.values[i]
+			margin := zScore * se
+			lower[name] = mean - margin
+			upper[name] = mean + margin
+			stdErrs[name] = se
+		}
+
+		exp.Metadata.ConfidenceIntervals = &explanation.ConfidenceIntervals{
+			Level:          e.config.ConfidenceLevel,
+			Lower:          lower,
+			Upper:          upper,
+			StandardErrors: stdErrs,
+		}
 	}
 
 	return exp, nil
@@ -155,10 +180,18 @@ func (e *Explainer) FeatureNames() []string {
 	return e.featureNames
 }
 
+// shapResult holds SHAP values along with variance information for confidence intervals.
+type shapResult struct {
+	values         []float64
+	standardErrors []float64
+}
+
 // computeSHAPValues computes SHAP values using antithetic permutation sampling.
-func (e *Explainer) computeSHAPValues(ctx context.Context, instance []float64) ([]float64, error) {
+func (e *Explainer) computeSHAPValues(ctx context.Context, instance []float64) (*shapResult, error) {
 	numFeatures := len(instance)
-	shapValues := make([]float64, numFeatures)
+	shapSums := make([]float64, numFeatures)
+	shapSumSq := make([]float64, numFeatures)
+	trackVariance := e.config.ConfidenceLevel > 0
 
 	for sample := 0; sample < e.config.NumSamples; sample++ {
 		// Check context cancellation
@@ -173,35 +206,59 @@ func (e *Explainer) computeSHAPValues(ctx context.Context, instance []float64) (
 			return nil, err
 		}
 
-		for i := range shapValues {
-			shapValues[i] += contributions[i]
+		for i := range shapSums {
+			shapSums[i] += contributions[i]
+			if trackVariance {
+				shapSumSq[i] += contributions[i] * contributions[i]
+			}
 		}
 	}
 
-	// Average over samples
-	for i := range shapValues {
-		shapValues[i] /= float64(e.config.NumSamples)
+	// Compute means and standard errors
+	n := float64(e.config.NumSamples)
+	result := &shapResult{
+		values: make([]float64, numFeatures),
+	}
+	if trackVariance {
+		result.standardErrors = make([]float64, numFeatures)
 	}
 
-	return shapValues, nil
+	for i := range result.values {
+		mean := shapSums[i] / n
+		result.values[i] = mean
+
+		if trackVariance && e.config.NumSamples > 1 {
+			// Variance = E[X²] - E[X]²
+			meanSq := shapSumSq[i] / n
+			variance := meanSq - mean*mean
+			// Standard error = sqrt(variance / n)
+			if variance > 0 {
+				result.standardErrors[i] = math.Sqrt(variance / n)
+			}
+		}
+	}
+
+	return result, nil
 }
 
 // computeSHAPValuesParallel computes SHAP values using parallel workers.
-func (e *Explainer) computeSHAPValuesParallel(ctx context.Context, instance []float64) ([]float64, error) {
+func (e *Explainer) computeSHAPValuesParallel(ctx context.Context, instance []float64) (*shapResult, error) {
 	numFeatures := len(instance)
 	numWorkers := e.config.NumWorkers
 	numSamples := e.config.NumSamples
+	trackVariance := e.config.ConfidenceLevel > 0
 
 	// Distribute samples across workers
 	samplesPerWorker := numSamples / numWorkers
 	extraSamples := numSamples % numWorkers
 
-	type result struct {
-		values []float64
-		err    error
+	type workerResult struct {
+		sums  []float64
+		sumSq []float64
+		err   error
 	}
 
-	results := make(chan result, numWorkers)
+	results := make(chan workerResult, numWorkers)
 	var wg sync.WaitGroup
 
 	for w := 0; w < numWorkers; w++ {
@@ -216,32 +273,39 @@ func (e *Explainer) computeSHAPValuesParallel(ctx context.Context, instance []fl
 		workerSeed := e.rng.Int63()
 		e.mu.Unlock()
 
-		go func(numSamples int, seed int64) {
+		go func(nSamples int, seed int64) {
 			defer wg.Done()
 
 			workerRNG := rand.New(rand.NewSource(seed)) //nolint:gosec // seeded for reproducibility
-			values := make([]float64, numFeatures)
+			sums := make([]float64, numFeatures)
+			var sumSq []float64
+			if trackVariance {
+				sumSq = make([]float64, numFeatures)
+			}
 
-			for sample := 0; sample < numSamples; sample++ {
+			for sample := 0; sample < nSamples; sample++ {
 				select {
 				case <-ctx.Done():
-					results <- result{nil, ctx.Err()}
+					results <- workerResult{nil, nil, ctx.Err()}
 					return
 				default:
 				}
 
 				contributions, err := e.sampleContributionsWithRNG(ctx, instance, workerRNG)
 				if err != nil {
-					results <- result{nil, err}
+					results <- workerResult{nil, nil, err}
 					return
 				}
 
-				for i := range values {
-					values[i] += contributions[i]
+				for i := range sums {
+					sums[i] += contributions[i]
+					if trackVariance {
+						sumSq[i] += contributions[i] * contributions[i]
+					}
 				}
 			}
 
-			results <- result{values, nil}
+			results <- workerResult{sums, sumSq, nil}
 		}(workerSamples, workerSeed)
 	}
 
@@ -252,22 +316,49 @@ func (e *Explainer) computeSHAPValuesParallel(ctx context.Context, instance []fl
 	}()
 
 	// Aggregate results
-	shapValues := make([]float64, numFeatures)
+	shapSums := make([]float64, numFeatures)
+	var shapSumSq []float64
+	if trackVariance {
+		shapSumSq = make([]float64, numFeatures)
+	}
+
 	for res := range results {
 		if res.err != nil {
 			return nil, res.err
 		}
-		for i := range shapValues {
-			shapValues[i] += res.values[i]
+		for i := range shapSums {
+			shapSums[i] += res.sums[i]
+			if trackVariance && res.sumSq != nil {
+				shapSumSq[i] += res.sumSq[i]
+			}
 		}
 	}
 
-	// Average over total samples
-	for i := range shapValues {
-		shapValues[i] /= float64(numSamples)
+	// Compute means and standard errors
+	n := float64(numSamples)
+	result := &shapResult{
+		values: make([]float64, numFeatures),
+	}
+	if trackVariance {
+		result.standardErrors = make([]float64, numFeatures)
 	}
 
-	return shapValues, nil
+	for i := range result.values {
+		mean := shapSums[i] / n
+		result.values[i] = mean
+
+		if trackVariance && numSamples > 1 {
+			// Variance = E[X²] - E[X]²
+			meanSq := shapSumSq[i] / n
+			variance := meanSq - mean*mean
+			// Standard error = sqrt(variance / n)
+			if variance > 0 {
+				result.standardErrors[i] = math.Sqrt(variance / n)
+			}
+		}
+	}
+
+	return result, nil
 }
 
 // sampleContributions computes feature contributions for a single permutation sample.

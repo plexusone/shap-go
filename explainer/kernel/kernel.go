@@ -358,6 +358,11 @@ func (e *Explainer) sampleCoalitions(ctx context.Context, instance []float64, rn
 
 // enumerateCoalitions generates all coalitions of a given size and their complements.
 func (e *Explainer) enumerateCoalitions(ctx context.Context, instance []float64, size, numFeatures int) ([]coalitionData, error) {
+	// Use batched evaluation if enabled
+	if e.config.UseBatchedPredictions {
+		return e.enumerateCoalitionsBatched(ctx, instance, size, numFeatures)
+	}
+
 	samples := make([]coalitionData, 0)
 	weight := shapleyKernelWeight(numFeatures, size)
 	complementWeight := shapleyKernelWeight(numFeatures, numFeatures-size)
@@ -404,6 +409,75 @@ func (e *Explainer) enumerateCoalitions(ctx context.Context, instance []float64,
 		// Generate next combination
 		if !nextCombination(indices, numFeatures) {
 			break
+		}
+	}
+
+	return samples, nil
+}
+
+// enumerateCoalitionsBatched generates all coalitions using batched predictions.
+// This collects all masks first, then evaluates them in a single batch call.
+func (e *Explainer) enumerateCoalitionsBatched(ctx context.Context, instance []float64, size, numFeatures int) ([]coalitionData, error) {
+	weight := shapleyKernelWeight(numFeatures, size)
+	complementWeight := shapleyKernelWeight(numFeatures, numFeatures-size)
+	includeComplement := size != numFeatures-size
+
+	// First pass: collect all masks
+	var masks [][]float64
+	var weights []float64
+	var isComplement []bool
+
+	indices := make([]int, size)
+	for i := range indices {
+		indices[i] = i
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+		}
+
+		// Create coalition mask
+		mask := make([]float64, numFeatures)
+		for _, idx := range indices {
+			mask[idx] = 1.0
+		}
+		masks = append(masks, mask)
+		weights = append(weights, weight)
+		isComplement = append(isComplement, false)
+
+		// Add complement (if different from coalition)
+		if includeComplement {
+			complementMask := make([]float64, numFeatures)
+			for i := range complementMask {
+				complementMask[i] = 1.0 - mask[i]
+			}
+			masks = append(masks, complementMask)
+			weights = append(weights, complementWeight)
+			isComplement = append(isComplement, true)
+		}
+
+		// Generate next combination
+		if !nextCombination(indices, numFeatures) {
+			break
+		}
+	}
+
+	// Second pass: evaluate all coalitions in batch
+	predictions, err := e.evaluateCoalitionsBatched(ctx, instance, masks)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build result
+	samples := make([]coalitionData, len(masks))
+	for i := range masks {
+		samples[i] = coalitionData{
+			mask:   masks[i],
+			weight: weights[i],
+			pred:   predictions[i],
 		}
 	}
 
@@ -511,6 +585,11 @@ func (e *Explainer) sampleCoalitionSize(numFeatures int, enumerated map[int]bool
 // evaluateCoalition computes the model prediction for a coalition.
 // Uses the mean prediction over background samples for masked features.
 func (e *Explainer) evaluateCoalition(ctx context.Context, instance []float64, mask []float64) (float64, error) {
+	// Use batched predictions if enabled
+	if e.config.UseBatchedPredictions {
+		return e.evaluateCoalitionBatched(ctx, instance, mask)
+	}
+
 	numFeatures := len(instance)
 
 	// Average prediction over all background samples
@@ -533,6 +612,90 @@ func (e *Explainer) evaluateCoalition(ctx context.Context, instance []float64, m
 	}
 
 	return totalPred / float64(len(e.background)), nil
+}
+
+// evaluateCoalitionBatched computes coalition prediction using batched model inference.
+// This is more efficient when the model has optimized batch prediction.
+func (e *Explainer) evaluateCoalitionBatched(ctx context.Context, instance []float64, mask []float64) (float64, error) {
+	numFeatures := len(instance)
+	numBackground := len(e.background)
+
+	// Build all masked inputs at once
+	inputs := make([][]float64, numBackground)
+	for b, bgSample := range e.background {
+		input := make([]float64, numFeatures)
+		for i := 0; i < numFeatures; i++ {
+			if mask[i] > 0.5 {
+				input[i] = instance[i]
+			} else {
+				input[i] = bgSample[i]
+			}
+		}
+		inputs[b] = input
+	}
+
+	// Batch prediction
+	predictions, err := e.model.PredictBatch(ctx, inputs)
+	if err != nil {
+		return 0, err
+	}
+
+	// Average predictions
+	totalPred := 0.0
+	for _, pred := range predictions {
+		totalPred += pred
+	}
+
+	return totalPred / float64(numBackground), nil
+}
+
+// evaluateCoalitionsBatched evaluates multiple coalitions in a single batch.
+// Returns the average prediction for each coalition (one per mask).
+// This is the most efficient method when evaluating many coalitions.
+func (e *Explainer) evaluateCoalitionsBatched(ctx context.Context, instance []float64, masks [][]float64) ([]float64, error) {
+	numFeatures := len(instance)
+	numBackground := len(e.background)
+	numCoalitions := len(masks)
+
+	// Total inputs: numCoalitions * numBackground
+	totalInputs := numCoalitions * numBackground
+	inputs := make([][]float64, totalInputs)
+
+	// Build all inputs for all coalitions and all background samples
+	idx := 0
+	for _, mask := range masks {
+		for _, bgSample := range e.background {
+			input := make([]float64, numFeatures)
+			for i := 0; i < numFeatures; i++ {
+				if mask[i] > 0.5 {
+					input[i] = instance[i]
+				} else {
+					input[i] = bgSample[i]
+				}
+			}
+			inputs[idx] = input
+			idx++
+		}
+	}
+
+	// Single batch prediction for all
+	predictions, err := e.model.PredictBatch(ctx, inputs)
+	if err != nil {
+		return nil, err
+	}
+
+	// Aggregate predictions by coalition
+	results := make([]float64, numCoalitions)
+	for c := 0; c < numCoalitions; c++ {
+		start := c * numBackground
+		totalPred := 0.0
+		for b := 0; b < numBackground; b++ {
+			totalPred += predictions[start+b]
+		}
+		results[c] = totalPred / float64(numBackground)
+	}
+
+	return results, nil
 }
 
 // shapleyKernelWeight computes the Shapley kernel weight for a coalition of given size.

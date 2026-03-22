@@ -4,6 +4,7 @@ package sampling
 import (
 	"context"
 	"fmt"
+	"math"
 	"math/rand"
 	"time"
 
@@ -84,7 +85,7 @@ func (e *Explainer) Explain(ctx context.Context, instance []float64) (*explanati
 	}
 
 	// Compute SHAP values using Monte Carlo sampling
-	shapValues, err := e.computeSHAPValues(ctx, instance)
+	shapResult, err := e.computeSHAPValues(ctx, instance)
 	if err != nil {
 		return nil, fmt.Errorf("failed to compute SHAP values: %w", err)
 	}
@@ -93,7 +94,7 @@ func (e *Explainer) Explain(ctx context.Context, instance []float64) (*explanati
 	values := make(map[string]float64)
 	featureValues := make(map[string]float64)
 	for i, name := range e.featureNames {
-		values[name] = shapValues[i]
+		values[name] = shapResult.values[i]
 		featureValues[name] = instance[i]
 	}
 
@@ -111,6 +112,30 @@ func (e *Explainer) Explain(ctx context.Context, instance []float64) (*explanati
 			BackgroundSize: len(e.background),
 			ComputeTimeMS:  time.Since(startTime).Milliseconds(),
 		},
+	}
+
+	// Add confidence intervals if enabled
+	if e.config.ConfidenceLevel > 0 && shapResult.standardErrors != nil {
+		zScore := explainer.ZScoreForConfidenceLevel(e.config.ConfidenceLevel)
+		lower := make(map[string]float64)
+		upper := make(map[string]float64)
+		stdErrs := make(map[string]float64)
+
+		for i, name := range e.featureNames {
+			se := shapResult.standardErrors[i]
+			mean := shapResult.values[i]
+			margin := zScore * se
+			lower[name] = mean - margin
+			upper[name] = mean + margin
+			stdErrs[name] = se
+		}
+
+		exp.Metadata.ConfidenceIntervals = &explanation.ConfidenceIntervals{
+			Level:          e.config.ConfidenceLevel,
+			Lower:          lower,
+			Upper:          upper,
+			StandardErrors: stdErrs,
+		}
 	}
 
 	return exp, nil
@@ -139,12 +164,22 @@ func (e *Explainer) FeatureNames() []string {
 	return e.featureNames
 }
 
+// shapResult holds SHAP values along with variance information for confidence intervals.
+type shapResult struct {
+	values         []float64
+	standardErrors []float64
+}
+
 // computeSHAPValues computes SHAP values using Monte Carlo sampling.
 // For each feature, we estimate its contribution by averaging over random coalitions.
-func (e *Explainer) computeSHAPValues(ctx context.Context, instance []float64) ([]float64, error) {
+// Also tracks variance for confidence interval computation when enabled.
+func (e *Explainer) computeSHAPValues(ctx context.Context, instance []float64) (*shapResult, error) {
 	numFeatures := len(instance)
-	shapValues := make([]float64, numFeatures)
+	shapSums := make([]float64, numFeatures)
+	shapSumSq := make([]float64, numFeatures) // sum of squared contributions
 	counts := make([]int, numFeatures)
+
+	trackVariance := e.config.ConfidenceLevel > 0
 
 	// Sample random permutations and compute marginal contributions
 	for sample := 0; sample < e.config.NumSamples; sample++ {
@@ -183,21 +218,43 @@ func (e *Explainer) computeSHAPValues(ctx context.Context, instance []float64) (
 
 			// Contribution = prediction after - prediction before
 			contribution := newPred - prevPred
-			shapValues[featureIdx] += contribution
+			shapSums[featureIdx] += contribution
+			if trackVariance {
+				shapSumSq[featureIdx] += contribution * contribution
+			}
 			counts[featureIdx]++
 
 			prevPred = newPred
 		}
 	}
 
-	// Average the contributions
-	for i := range shapValues {
+	// Compute means and standard errors
+	result := &shapResult{
+		values: make([]float64, numFeatures),
+	}
+	if trackVariance {
+		result.standardErrors = make([]float64, numFeatures)
+	}
+
+	for i := range result.values {
 		if counts[i] > 0 {
-			shapValues[i] /= float64(counts[i])
+			n := float64(counts[i])
+			mean := shapSums[i] / n
+			result.values[i] = mean
+
+			if trackVariance && counts[i] > 1 {
+				// Variance = E[X²] - E[X]²
+				meanSq := shapSumSq[i] / n
+				variance := meanSq - mean*mean
+				// Standard error = sqrt(variance / n)
+				if variance > 0 {
+					result.standardErrors[i] = math.Sqrt(variance / n)
+				}
+			}
 		}
 	}
 
-	return shapValues, nil
+	return result, nil
 }
 
 // randomPermutation generates a random permutation of [0, n).

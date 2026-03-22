@@ -266,6 +266,11 @@ func (e *Explainer) getCoalitionPrediction(ctx context.Context, instance []float
 // evaluateCoalition computes the expected prediction for a coalition.
 // Features in the coalition use instance values; others use background values.
 func (e *Explainer) evaluateCoalition(ctx context.Context, instance []float64, coalition uint64) (float64, error) {
+	// Use batched predictions if enabled
+	if e.config.UseBatchedPredictions {
+		return e.evaluateCoalitionBatched(ctx, instance, coalition)
+	}
+
 	numFeatures := len(instance)
 
 	// Average prediction over all background samples
@@ -288,6 +293,41 @@ func (e *Explainer) evaluateCoalition(ctx context.Context, instance []float64, c
 	}
 
 	return totalPred / float64(len(e.background)), nil
+}
+
+// evaluateCoalitionBatched computes coalition prediction using batched model inference.
+// This is more efficient when the model has optimized batch prediction.
+func (e *Explainer) evaluateCoalitionBatched(ctx context.Context, instance []float64, coalition uint64) (float64, error) {
+	numFeatures := len(instance)
+	numBackground := len(e.background)
+
+	// Build all masked inputs at once
+	inputs := make([][]float64, numBackground)
+	for b, bgSample := range e.background {
+		input := make([]float64, numFeatures)
+		for j := 0; j < numFeatures; j++ {
+			if coalition&(1<<j) != 0 {
+				input[j] = instance[j]
+			} else {
+				input[j] = bgSample[j]
+			}
+		}
+		inputs[b] = input
+	}
+
+	// Batch prediction
+	predictions, err := e.model.PredictBatch(ctx, inputs)
+	if err != nil {
+		return 0, err
+	}
+
+	// Average predictions
+	totalPred := 0.0
+	for _, pred := range predictions {
+		totalPred += pred
+	}
+
+	return totalPred / float64(numBackground), nil
 }
 
 // buildCoalition converts a coalition index to a bitmask, skipping feature i.

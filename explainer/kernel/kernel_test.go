@@ -632,3 +632,237 @@ func BenchmarkKernelExplainer_Explain_Parallel(b *testing.B) {
 		_, _ = exp.Explain(ctx, instance)
 	}
 }
+
+// Tests for batched predictions
+
+func TestKernelExplainer_BatchedPredictions_SameResults(t *testing.T) {
+	// Verify that batched predictions produce the same results as non-batched
+	fm := model.NewFuncModel(linearModel, 3)
+
+	background := [][]float64{
+		{0.0, 0.0, 0.0},
+		{1.0, 1.0, 1.0},
+		{2.0, 2.0, 2.0},
+	}
+
+	ctx := context.Background()
+	instance := []float64{1.0, 2.0, 3.0}
+
+	// Create non-batched explainer
+	expNonBatched, err := New(fm, background,
+		explainer.WithNumSamples(50),
+		explainer.WithSeed(42),
+	)
+	if err != nil {
+		t.Fatalf("New() non-batched error = %v", err)
+	}
+
+	// Create batched explainer with same seed
+	expBatched, err := New(fm, background,
+		explainer.WithNumSamples(50),
+		explainer.WithSeed(42),
+		explainer.WithBatchedPredictions(true),
+	)
+	if err != nil {
+		t.Fatalf("New() batched error = %v", err)
+	}
+
+	// Get explanations
+	resultNonBatched, err := expNonBatched.Explain(ctx, instance)
+	if err != nil {
+		t.Fatalf("Explain() non-batched error = %v", err)
+	}
+
+	resultBatched, err := expBatched.Explain(ctx, instance)
+	if err != nil {
+		t.Fatalf("Explain() batched error = %v", err)
+	}
+
+	// Results should be identical
+	tolerance := 1e-10
+	for name, val := range resultNonBatched.Values {
+		batchedVal := resultBatched.Values[name]
+		if math.Abs(val-batchedVal) > tolerance {
+			t.Errorf("SHAP(%s): non-batched=%f, batched=%f, diff=%f",
+				name, val, batchedVal, math.Abs(val-batchedVal))
+		}
+	}
+
+	// Both should satisfy local accuracy
+	if !resultNonBatched.Verify(1e-6).Valid {
+		t.Error("Non-batched explanation failed local accuracy")
+	}
+	if !resultBatched.Verify(1e-6).Valid {
+		t.Error("Batched explanation failed local accuracy")
+	}
+}
+
+func TestKernelExplainer_BatchedPredictions_WeightedModel(t *testing.T) {
+	// Test batched predictions with a more complex weighted model
+	wm := &weightedModel{weights: []float64{2.0, 3.0, 1.0}, bias: 0.5}
+	fm := model.NewFuncModel(wm.predict, 3)
+
+	background := [][]float64{
+		{0.0, 0.0, 0.0},
+		{1.0, 0.5, 0.25},
+	}
+
+	ctx := context.Background()
+	instance := []float64{1.0, 2.0, 3.0}
+
+	// Test with batched predictions
+	exp, err := New(fm, background,
+		explainer.WithNumSamples(100),
+		explainer.WithSeed(42),
+		explainer.WithBatchedPredictions(true),
+	)
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	result, err := exp.Explain(ctx, instance)
+	if err != nil {
+		t.Fatalf("Explain() error = %v", err)
+	}
+
+	// Verify local accuracy
+	verifyResult := result.Verify(1e-6)
+	if !verifyResult.Valid {
+		t.Errorf("Local accuracy failed: sum=%f, expected=%f, diff=%f",
+			verifyResult.SumSHAP, verifyResult.Expected, verifyResult.Difference)
+	}
+
+	// Check prediction is correct: 2*1 + 3*2 + 1*3 + 0.5 = 11.5
+	expectedPred := 11.5
+	if math.Abs(result.Prediction-expectedPred) > 1e-10 {
+		t.Errorf("Prediction = %f, want %f", result.Prediction, expectedPred)
+	}
+}
+
+func TestKernelExplainer_BatchedPredictions_SingleFeature(t *testing.T) {
+	// Test batched predictions with single feature (edge case)
+	fm := model.NewFuncModel(func(ctx context.Context, input []float64) (float64, error) {
+		return input[0] * 2, nil
+	}, 1)
+
+	background := [][]float64{
+		{0.0},
+		{1.0},
+	}
+
+	ctx := context.Background()
+	instance := []float64{3.0}
+
+	exp, err := New(fm, background,
+		explainer.WithNumSamples(50),
+		explainer.WithSeed(42),
+		explainer.WithBatchedPredictions(true),
+	)
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	result, err := exp.Explain(ctx, instance)
+	if err != nil {
+		t.Fatalf("Explain() error = %v", err)
+	}
+
+	// Single feature: SHAP = prediction - baseline
+	expectedSHAP := result.Prediction - result.BaseValue
+	tolerance := 1e-10
+	if math.Abs(result.Values["feature_0"]-expectedSHAP) > tolerance {
+		t.Errorf("SHAP(feature_0) = %f, want %f", result.Values["feature_0"], expectedSHAP)
+	}
+}
+
+func TestKernelExplainer_BatchedPredictions_LargeBackground(t *testing.T) {
+	// Test batched predictions with larger background (benefits more from batching)
+	fm := model.NewFuncModel(linearModel, 4)
+
+	// 10 background samples
+	background := make([][]float64, 10)
+	for i := range background {
+		background[i] = make([]float64, 4)
+		for j := range background[i] {
+			background[i][j] = float64(i) * 0.1
+		}
+	}
+
+	ctx := context.Background()
+	instance := []float64{1.0, 2.0, 3.0, 4.0}
+
+	// Test both batched and non-batched
+	expNonBatched, _ := New(fm, background,
+		explainer.WithNumSamples(50),
+		explainer.WithSeed(42),
+	)
+
+	expBatched, _ := New(fm, background,
+		explainer.WithNumSamples(50),
+		explainer.WithSeed(42),
+		explainer.WithBatchedPredictions(true),
+	)
+
+	resultNonBatched, err := expNonBatched.Explain(ctx, instance)
+	if err != nil {
+		t.Fatalf("Explain() non-batched error = %v", err)
+	}
+
+	resultBatched, err := expBatched.Explain(ctx, instance)
+	if err != nil {
+		t.Fatalf("Explain() batched error = %v", err)
+	}
+
+	// Results should be identical
+	tolerance := 1e-10
+	for name, val := range resultNonBatched.Values {
+		batchedVal := resultBatched.Values[name]
+		if math.Abs(val-batchedVal) > tolerance {
+			t.Errorf("SHAP(%s): non-batched=%f, batched=%f", name, val, batchedVal)
+		}
+	}
+}
+
+func BenchmarkKernelExplainer_Batched(b *testing.B) {
+	fm := model.NewFuncModel(linearModel, 5)
+	background := make([][]float64, 10)
+	for i := range background {
+		background[i] = make([]float64, 5)
+	}
+
+	exp, _ := New(fm, background,
+		explainer.WithNumSamples(100),
+		explainer.WithSeed(42),
+		explainer.WithBatchedPredictions(true),
+	)
+
+	ctx := context.Background()
+	instance := []float64{1.0, 2.0, 3.0, 4.0, 5.0}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = exp.Explain(ctx, instance)
+	}
+}
+
+func BenchmarkKernelExplainer_NonBatched(b *testing.B) {
+	fm := model.NewFuncModel(linearModel, 5)
+	background := make([][]float64, 10)
+	for i := range background {
+		background[i] = make([]float64, 5)
+	}
+
+	exp, _ := New(fm, background,
+		explainer.WithNumSamples(100),
+		explainer.WithSeed(42),
+		explainer.WithBatchedPredictions(false),
+	)
+
+	ctx := context.Background()
+	instance := []float64{1.0, 2.0, 3.0, 4.0, 5.0}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = exp.Explain(ctx, instance)
+	}
+}
