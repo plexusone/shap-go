@@ -44,14 +44,14 @@ SHAP-Go provides a Go-native implementation of SHAP value computation for explai
 
 | Status | Explainer | Model Type | Notes |
 |:------:|-----------|------------|-------|
-| ✅ | **PermutationSHAP** | Any | Black-box, antithetic sampling for variance reduction, guarantees local accuracy |
-| ✅ | **SamplingSHAP** | Any | Monte Carlo approximation, fast, good for quick estimates |
-| ✅ | **TreeSHAP** | Trees | Exact & fast (O(TLD²)) for XGBoost, LightGBM; 40-100x faster than permutation |
-| ✅ | **LinearSHAP** | Linear | Exact closed-form solution for linear/logistic regression |
+| ✅ | **TreeSHAP** | Trees | Exact & fast (O(TLD²)) for XGBoost, LightGBM, CatBoost; 40-100x faster than permutation |
 | ✅ | **KernelSHAP** | Any | Black-box, weighted linear regression, model-agnostic baseline |
-| ✅ | **ExactSHAP** | Any | Brute-force exact computation, O(2^n) - only for small feature sets (≤15) |
+| ✅ | **LinearSHAP** | Linear | Exact closed-form solution for linear/logistic regression |
 | ✅ | **DeepSHAP** | Neural Nets | Combines DeepLIFT with Shapley values, efficient for deep networks |
 | ✅ | **GradientSHAP** | Any | Expected gradients using numerical differentiation, works with any differentiable model |
+| ✅ | **SamplingSHAP** | Any | Monte Carlo approximation, fast, good for quick estimates |
+| ✅ | **PermutationSHAP** | Any | Black-box, antithetic sampling for variance reduction, guarantees local accuracy |
+| ✅ | **ExactSHAP** | Any | Brute-force exact computation, O(2^n) - only for small feature sets (≤15) |
 | ✅ | **PartitionSHAP** | Structured | Hierarchical Owen values for feature groupings, respects domain structure |
 | ✅ | **AdditiveSHAP** | GAMs | Exact SHAP for Generalized Additive Models, O(n×b) complexity |
 
