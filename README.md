@@ -4,6 +4,7 @@
 [![Go Lint][go-lint-svg]][go-lint-url]
 [![Go SAST][go-sast-svg]][go-sast-url]
 [![Go Report Card][goreport-svg]][goreport-url]
+[![Coverage][coverage-svg]][coverage-url]
 [![Docs][docs-godoc-svg]][docs-godoc-url]
 [![Visualization][viz-svg]][viz-url]
 [![License][license-svg]][license-url]
@@ -16,6 +17,8 @@
  [go-sast-url]: https://github.com/plexusone/shap-go/actions/workflows/go-sast-codeql.yaml
  [goreport-svg]: https://goreportcard.com/badge/github.com/plexusone/shap-go
  [goreport-url]: https://goreportcard.com/report/github.com/plexusone/shap-go
+ [coverage-svg]: https://img.shields.io/badge/coverage-80%25-brightgreen
+ [coverage-url]: https://github.com/plexusone/shap-go
  [docs-godoc-svg]: https://pkg.go.dev/badge/github.com/plexusone/shap-go
  [docs-godoc-url]: https://pkg.go.dev/github.com/plexusone/shap-go
  [viz-svg]: https://img.shields.io/badge/visualizaton-Go-blue.svg
@@ -47,10 +50,10 @@ SHAP-Go provides a Go-native implementation of SHAP value computation for explai
 | ✅ | **LinearSHAP** | Linear | Exact closed-form solution for linear/logistic regression |
 | ✅ | **KernelSHAP** | Any | Black-box, weighted linear regression, model-agnostic baseline |
 | ✅ | **ExactSHAP** | Any | Brute-force exact computation, O(2^n) - only for small feature sets (≤15) |
-| ⬜ | **DeepSHAP** | Neural Nets | Combines DeepLIFT with Shapley values, efficient for deep networks |
-| ⬜ | **GradientSHAP** | Neural Nets | Expected gradients + noise, connects SHAP to integrated gradients |
-| ⬜ | **PartitionSHAP** | Structured | Hierarchical clustering of features, faster for correlated features |
-| ⬜ | **ExactSHAP** | Any | Brute-force exact computation, O(2ⁿ) - only for small feature sets |
+| ✅ | **DeepSHAP** | Neural Nets | Combines DeepLIFT with Shapley values, efficient for deep networks |
+| ✅ | **GradientSHAP** | Any | Expected gradients using numerical differentiation, works with any differentiable model |
+| ✅ | **PartitionSHAP** | Structured | Hierarchical Owen values for feature groupings, respects domain structure |
+| ✅ | **AdditiveSHAP** | GAMs | Exact SHAP for Generalized Additive Models, O(n×b) complexity |
 
 ### Legend
 
@@ -67,8 +70,10 @@ SHAP-Go provides a Go-native implementation of SHAP value computation for explai
 | Any model, weighted regression baseline | **KernelSHAP** ✅ |
 | Any model, quick estimates | SamplingSHAP |
 | Small feature sets (≤15 features) | **ExactSHAP** ✅ |
-| Deep learning models | DeepSHAP or GradientSHAP (when available) |
-| Highly correlated features | PartitionSHAP (when available) |
+| Deep learning models (ONNX) | **DeepSHAP** ✅ |
+| Differentiable models, gradient-based | **GradientSHAP** ✅ |
+| Grouped/structured features | **PartitionSHAP** ✅ |
+| Generalized Additive Models (GAMs) | **AdditiveSHAP** ✅ |
 
 ## Installation
 
@@ -173,11 +178,14 @@ func main() {
 ### LightGBM Example
 
 ```go
-// Load LightGBM model (saved with booster.dump_model())
+// Load LightGBM JSON model (saved with booster.dump_model())
 ensemble, err := tree.LoadLightGBMModel("model.json")
 if err != nil {
     log.Fatal(err)
 }
+
+// Or load text format (saved with booster.save_model())
+ensemble, err := tree.LoadLightGBMTextModel("model.txt")
 
 explainer, err := tree.New(ensemble)
 // ... same as XGBoost
@@ -216,6 +224,39 @@ instances := [][]float64{
 explanations, err := explainer.ExplainBatch(ctx, instances)
 ```
 
+### Interaction Values
+
+TreeSHAP can compute pairwise feature interactions, revealing how features work together:
+
+```go
+// Compute SHAP interaction values
+result, err := explainer.ExplainInteractions(ctx, instance)
+if err != nil {
+    log.Fatal(err)
+}
+
+// Interaction matrix properties:
+// - Diagonal Interactions[i][i]: main effect of feature i
+// - Off-diagonal Interactions[i][j]: interaction between features i and j
+// - Symmetric: Interactions[i][j] == Interactions[j][i]
+// - Rows sum to SHAP values: sum(Interactions[i][:]) == SHAP[i]
+
+// Get the interaction between two features
+interaction := result.GetInteraction(0, 1)
+
+// Get main effect (diagonal)
+mainEffect := result.GetMainEffect(0)
+
+// Get derived SHAP value (row sum)
+shapValue := result.GetSHAPValue(0)
+
+// Get top k strongest interactions
+topK := result.TopInteractions(5)
+for _, inter := range topK {
+    fmt.Printf("%s <-> %s: %.4f\n", inter.Name1, inter.Name2, inter.Value)
+}
+```
+
 ## Packages
 
 ### `explanation`
@@ -249,8 +290,9 @@ TreeSHAP for tree-based models:
 - 🎯 **Exact** SHAP values (not approximations)
 - ⚡ O(TLD²) complexity - 40-100x faster than permutation
 - 🌲 XGBoost JSON model support
-- 💡 LightGBM JSON model support
+- 💡 LightGBM JSON and text format support
 - 🔄 Parallel batch processing
+- 🔗 Interaction values for pairwise feature interactions
 
 ### `explainer/linear`
 
@@ -277,6 +319,15 @@ ExactSHAP for brute-force exact Shapley values:
 - ⏱️ O(n * 2^n) complexity - only practical for ≤15 features
 - 🔍 Useful for validating other SHAP implementations
 - 📐 Reference implementation for small feature sets
+
+### `explainer/deepshap`
+
+DeepSHAP for neural network explanations:
+
+- 🧠 Combines DeepLIFT with Shapley values for efficient neural network attribution
+- 🔗 Works with ONNX models via `model/onnx` ActivationSession
+- ⚡ Efficient backward propagation using DeepLIFT rescale rule
+- 📊 Supports Dense, ReLU, Sigmoid, Tanh, Softmax layers
 
 ### `explainer/permutation`
 
@@ -441,6 +492,8 @@ The `examples/` directory contains working examples:
 | [`examples/treeshap`](examples/treeshap/) | TreeSHAP with manually constructed tree ensembles |
 | [`examples/kernelshap`](examples/kernelshap/) | KernelSHAP weighted linear regression explainer |
 | [`examples/sampling`](examples/sampling/) | SamplingSHAP Monte Carlo approximation |
+| [`examples/onnx_basic`](examples/onnx_basic/) | ONNX model with KernelSHAP explanations |
+| [`examples/deepshap`](examples/deepshap/) | DeepSHAP for neural network explanations |
 | [`examples/batch`](examples/batch/) | Batch processing with parallel workers |
 | [`examples/visualization`](examples/visualization/) | Generating chart data for visualizations |
 | [`examples/markdown_report`](examples/markdown_report/) | Generate Markdown reports with SHAP explanations |
@@ -455,6 +508,10 @@ go run ./examples/sampling
 go run ./examples/batch
 go run ./examples/visualization
 go run ./examples/markdown_report
+
+# ONNX examples (requires ONNX Runtime and model files)
+cd examples/onnx_basic && python generate_model.py && go run main.go
+cd examples/deepshap && python generate_model.py && go run main.go
 ```
 
 ## License
