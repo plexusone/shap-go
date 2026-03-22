@@ -76,6 +76,8 @@ func (c *treeSHAPComputer) computeTreeSHAP(rootIdx int, instance []float64) []fl
 //   - pz: zero fraction for extending parent's feature (LOCAL, not cumulative)
 //   - po: one fraction (1.0 for hot path, 0.0 for cold path)
 //   - parentFeature: feature index from parent node (-1 for root/dummy)
+//
+//nolint:dupl // Similar to recurseInteractions() but uses PathElem and different accumulation
 func (c *treeSHAPComputer) recurse(
 	nodeIdx int,
 	instance []float64,
@@ -236,6 +238,8 @@ func extendPath(path []PathElem, pz, po float64, feature int) []PathElem {
 
 // unwindPath removes a feature from the path at the given position.
 // Returns a new path with the feature removed.
+//
+//nolint:dupl // Similar to unwindInteractionPath() but uses PathElem
 func unwindPath(path []PathElem, pathIdx int) []PathElem {
 	depth := len(path) - 1
 	if depth < 0 {
