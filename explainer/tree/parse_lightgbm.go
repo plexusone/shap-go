@@ -243,11 +243,4 @@ func convertNode(lgbNode *LightGBMNode, treeIdx, nodeOffset int, nodes []Node, n
 	return nil
 }
 
-// ParseLightGBMText parses a LightGBM text-format model.
-// The text format is used by model.save_model() with no extension or .txt extension.
-//
-// Note: Text format parsing is complex and varies by LightGBM version.
-// For full compatibility, use the JSON format with dump_model().
-func ParseLightGBMText(_ []byte) (*TreeEnsemble, error) {
-	return nil, fmt.Errorf("LightGBM text format not yet supported; use dump_model() JSON format instead")
-}
+// Note: ParseLightGBMText is implemented in parse_lightgbm_text.go
