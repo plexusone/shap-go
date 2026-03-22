@@ -2,86 +2,114 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://plexusone.github.io/shap-go/</loc>
-         <lastmod>2026-03-16</lastmod>
+         <lastmod>2026-03-22</lastmod>
     </url>
     <url>
          <loc>https://plexusone.github.io/shap-go/benchmarks/</loc>
-         <lastmod>2026-03-16</lastmod>
+         <lastmod>2026-03-22</lastmod>
     </url>
     <url>
          <loc>https://plexusone.github.io/shap-go/contributing/</loc>
-         <lastmod>2026-03-16</lastmod>
+         <lastmod>2026-03-22</lastmod>
     </url>
     <url>
          <loc>https://plexusone.github.io/shap-go/api/reference/</loc>
-         <lastmod>2026-03-16</lastmod>
+         <lastmod>2026-03-22</lastmod>
+    </url>
+    <url>
+         <loc>https://plexusone.github.io/shap-go/explainers/additiveshap/</loc>
+         <lastmod>2026-03-22</lastmod>
+    </url>
+    <url>
+         <loc>https://plexusone.github.io/shap-go/explainers/deepshap/</loc>
+         <lastmod>2026-03-22</lastmod>
     </url>
     <url>
          <loc>https://plexusone.github.io/shap-go/explainers/exactshap/</loc>
-         <lastmod>2026-03-16</lastmod>
+         <lastmod>2026-03-22</lastmod>
+    </url>
+    <url>
+         <loc>https://plexusone.github.io/shap-go/explainers/gradientshap/</loc>
+         <lastmod>2026-03-22</lastmod>
     </url>
     <url>
          <loc>https://plexusone.github.io/shap-go/explainers/kernelshap/</loc>
-         <lastmod>2026-03-16</lastmod>
+         <lastmod>2026-03-22</lastmod>
     </url>
     <url>
          <loc>https://plexusone.github.io/shap-go/explainers/linearshap/</loc>
-         <lastmod>2026-03-16</lastmod>
+         <lastmod>2026-03-22</lastmod>
     </url>
     <url>
          <loc>https://plexusone.github.io/shap-go/explainers/overview/</loc>
-         <lastmod>2026-03-16</lastmod>
+         <lastmod>2026-03-22</lastmod>
+    </url>
+    <url>
+         <loc>https://plexusone.github.io/shap-go/explainers/partitionshap/</loc>
+         <lastmod>2026-03-22</lastmod>
     </url>
     <url>
          <loc>https://plexusone.github.io/shap-go/explainers/permutation/</loc>
-         <lastmod>2026-03-16</lastmod>
+         <lastmod>2026-03-22</lastmod>
     </url>
     <url>
          <loc>https://plexusone.github.io/shap-go/explainers/sampling/</loc>
-         <lastmod>2026-03-16</lastmod>
+         <lastmod>2026-03-22</lastmod>
     </url>
     <url>
          <loc>https://plexusone.github.io/shap-go/explainers/treeshap/</loc>
-         <lastmod>2026-03-16</lastmod>
+         <lastmod>2026-03-22</lastmod>
     </url>
     <url>
          <loc>https://plexusone.github.io/shap-go/getting-started/installation/</loc>
-         <lastmod>2026-03-16</lastmod>
+         <lastmod>2026-03-22</lastmod>
     </url>
     <url>
          <loc>https://plexusone.github.io/shap-go/getting-started/quickstart/</loc>
-         <lastmod>2026-03-16</lastmod>
+         <lastmod>2026-03-22</lastmod>
+    </url>
+    <url>
+         <loc>https://plexusone.github.io/shap-go/guides/background-data/</loc>
+         <lastmod>2026-03-22</lastmod>
     </url>
     <url>
          <loc>https://plexusone.github.io/shap-go/models/lightgbm/</loc>
-         <lastmod>2026-03-16</lastmod>
+         <lastmod>2026-03-22</lastmod>
     </url>
     <url>
          <loc>https://plexusone.github.io/shap-go/models/onnx/</loc>
-         <lastmod>2026-03-16</lastmod>
+         <lastmod>2026-03-22</lastmod>
     </url>
     <url>
          <loc>https://plexusone.github.io/shap-go/models/xgboost/</loc>
-         <lastmod>2026-03-16</lastmod>
+         <lastmod>2026-03-22</lastmod>
+    </url>
+    <url>
+         <loc>https://plexusone.github.io/shap-go/presentations/explainable-ai-shap/</loc>
+         <lastmod>2026-03-22</lastmod>
     </url>
     <url>
          <loc>https://plexusone.github.io/shap-go/releases/v0.1.0/</loc>
-         <lastmod>2026-03-16</lastmod>
+         <lastmod>2026-03-22</lastmod>
     </url>
     <url>
          <loc>https://plexusone.github.io/shap-go/releases/v0.2.0/</loc>
-         <lastmod>2026-03-16</lastmod>
+         <lastmod>2026-03-22</lastmod>
     </url>
     <url>
          <loc>https://plexusone.github.io/shap-go/releases/v0.3.0/</loc>
-         <lastmod>2026-03-16</lastmod>
+         <lastmod>2026-03-22</lastmod>
+    </url>
+    <url>
+         <loc>https://plexusone.github.io/shap-go/releases/v0.4.0/</loc>
+         <lastmod>2026-03-22</lastmod>
     </url>
     <url>
          <loc>https://plexusone.github.io/shap-go/testing/python-validation/</loc>
-         <lastmod>2026-03-16</lastmod>
+         <lastmod>2026-03-22</lastmod>
     </url>
     <url>
          <loc>https://plexusone.github.io/shap-go/visualization/charts/</loc>
-         <lastmod>2026-03-16</lastmod>
+         <lastmod>2026-03-22</lastmod>
     </url>
 </urlset>
