@@ -64,8 +64,14 @@ nav:
     - LinearSHAP: explainers/linearshap.md
     - KernelSHAP: explainers/kernelshap.md
     - ExactSHAP: explainers/exactshap.md
+    - DeepSHAP: explainers/deepshap.md
+    - GradientSHAP: explainers/gradientshap.md
+    - PartitionSHAP: explainers/partitionshap.md
+    - AdditiveSHAP: explainers/additiveshap.md
     - PermutationSHAP: explainers/permutation.md
     - SamplingSHAP: explainers/sampling.md
+  - Guides:
+    - Background Data Selection: guides/background-data.md
   - Models:
     - XGBoost: models/xgboost.md
     - LightGBM: models/lightgbm.md

@@ -85,7 +85,7 @@ func main() {
 | :white_check_mark: | **SamplingSHAP** | Any | Monte Carlo approximation, fast estimates |
 | :white_check_mark: | **KernelSHAP** | Any | Model-agnostic weighted linear regression |
 | :white_check_mark: | **ExactSHAP** | Any | Brute-force exact, O(2^n) for small feature sets |
-| :white_large_square: | DeepSHAP | Neural Nets | For deep learning (planned) |
+| :white_check_mark: | **DeepSHAP** | Neural Nets | DeepLIFT-based SHAP for ONNX neural networks |
 
 ## Getting Started
 
@@ -132,6 +132,14 @@ Ready to start explaining your models?
     Model-agnostic weighted linear regression
 
     [:octicons-arrow-right-24: KernelSHAP guide](explainers/kernelshap.md)
+
+-   :material-brain:{ .lg .middle } **DeepSHAP**
+
+    ---
+
+    Efficient SHAP for neural networks
+
+    [:octicons-arrow-right-24: DeepSHAP guide](explainers/deepshap.md)
 
 -   :material-chart-bar:{ .lg .middle } **Benchmarks**
 
