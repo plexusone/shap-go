@@ -57,6 +57,42 @@ type ExplanationMetadata struct {
 
 	// Version is the library version used to generate this explanation.
 	Version string `json:"version,omitempty"`
+
+	// ConfidenceIntervals contains confidence intervals for SHAP values.
+	// Only populated for sampling-based methods when requested.
+	ConfidenceIntervals *ConfidenceIntervals `json:"confidence_intervals,omitempty"`
+}
+
+// ConfidenceIntervals contains uncertainty bounds for SHAP value estimates.
+// These are computed from the variance of Monte Carlo samples.
+type ConfidenceIntervals struct {
+	// Level is the confidence level (e.g., 0.95 for 95% confidence).
+	Level float64 `json:"level"`
+
+	// Lower contains the lower bounds for each feature.
+	Lower map[string]float64 `json:"lower"`
+
+	// Upper contains the upper bounds for each feature.
+	Upper map[string]float64 `json:"upper"`
+
+	// StandardErrors contains the standard error for each feature.
+	StandardErrors map[string]float64 `json:"standard_errors"`
+}
+
+// GetConfidenceInterval returns the confidence interval for a specific feature.
+// Returns (lower, upper, ok) where ok is false if the feature is not found.
+func (e *Explanation) GetConfidenceInterval(featureName string) (lower, upper float64, ok bool) {
+	if e.Metadata.ConfidenceIntervals == nil {
+		return 0, 0, false
+	}
+	lower, ok1 := e.Metadata.ConfidenceIntervals.Lower[featureName]
+	upper, ok2 := e.Metadata.ConfidenceIntervals.Upper[featureName]
+	return lower, upper, ok1 && ok2
+}
+
+// HasConfidenceIntervals returns true if confidence intervals are available.
+func (e *Explanation) HasConfidenceIntervals() bool {
+	return e.Metadata.ConfidenceIntervals != nil
 }
 
 // VerifyResult contains the results of verifying a SHAP explanation.
