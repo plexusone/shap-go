@@ -6,15 +6,16 @@ SHAP-Go provides multiple explainer algorithms, each with different trade-offs b
 
 | Explainer | Model Type | Accuracy | Speed | Status |
 |-----------|-----------|----------|-------|--------|
-| **TreeSHAP** | XGBoost, LightGBM | Exact | Very Fast | Implemented |
+| **TreeSHAP** | XGBoost, LightGBM, CatBoost | Exact | Very Fast | Implemented |
 | **LinearSHAP** | Linear, Logistic | Exact | Fastest | Implemented |
+| **AdditiveSHAP** | GAMs (no interactions) | Exact | Very Fast | Implemented |
 | **PermutationSHAP** | Any | Exact | Slow | Implemented |
 | **SamplingSHAP** | Any | Approximate | Fast | Implemented |
 | **KernelSHAP** | Any | Approximate | Medium | Implemented |
 | **ExactSHAP** | Any (≤15 features) | Exact | Very Slow | Implemented |
-| **DeepSHAP** | Neural Networks | Approximate | Fast | Planned |
-| **GradientSHAP** | Neural Networks | Approximate | Fast | Planned |
-| **PartitionSHAP** | Structured Data | Approximate | Fast | Planned |
+| **DeepSHAP** | Neural Networks | Approximate | Fast | Implemented |
+| **GradientSHAP** | Any Differentiable | Approximate | Fast | Implemented |
+| **PartitionSHAP** | Structured/Grouped | Approximate | Fast | Implemented |
 
 ## Decision Guide
 
@@ -24,7 +25,9 @@ graph TD
     B -->|Yes| C[TreeSHAP]
     B -->|No| D{Linear model?}
     D -->|Yes| E[LinearSHAP]
-    D -->|No| F{≤15 features?}
+    D -->|No| D2{Additive/GAM?}
+    D2 -->|Yes| E2[AdditiveSHAP]
+    D2 -->|No| F{≤15 features?}
     F -->|Yes| G{Need exact values?}
     G -->|Yes| H[ExactSHAP]
     G -->|No| I[KernelSHAP]
@@ -36,6 +39,7 @@ graph TD
 
     C --> O[Exact, O(TLD²)]
     E --> P[Exact, O(n)]
+    E2 --> P2[Exact, O(n×b)]
     H --> Q[Exact, O(2ⁿ)]
     K --> R[Exact, O(n! × model calls)]
     M --> S[Approximate, weighted regression]
@@ -106,6 +110,39 @@ exp, _ := linear.New(weights, bias, background)
 - You don't have access to model weights
 
 [LinearSHAP Guide →](linearshap.md)
+
+---
+
+### AdditiveSHAP
+
+**Best for:** Generalized Additive Models (GAMs) with no feature interactions.
+
+```go
+exp, _ := additive.New(model, background)
+```
+
+| Property | Value |
+|----------|-------|
+| **Accuracy** | Exact (closed-form solution) |
+| **Complexity** | O(n × b) where n=features, b=background |
+| **Background data** | Required |
+| **Local accuracy** | Guaranteed |
+
+**When to use:**
+
+- Generalized Additive Models (GAMs)
+- Spline-based models (pygam, interpret-ml)
+- Any model of the form: f(x) = Σ fᵢ(xᵢ)
+- Your model has no feature interactions
+
+**When NOT to use:**
+
+- Your model has feature interactions
+- Tree models (use TreeSHAP)
+- Linear models (use LinearSHAP - more efficient)
+- You're unsure if your model is truly additive
+
+[AdditiveSHAP Guide →](additiveshap.md)
 
 ---
 
@@ -248,65 +285,119 @@ exp, _ := exact.New(model, background,
 
 ---
 
-## Planned Explainers
-
 ### DeepSHAP
 
-**For:** Deep neural networks (TensorFlow, PyTorch, ONNX).
+**Best for:** Neural networks in ONNX format.
+
+```go
+graphInfo, _ := onnx.ParseGraph("model.onnx")
+session, _ := onnx.NewActivationSession(config)
+exp, _ := deepshap.New(session, graphInfo, background)
+```
 
 | Property | Value |
 |----------|-------|
 | **Accuracy** | Approximate (DeepLIFT-based) |
-| **Complexity** | O(layers × neurons) |
-| **Use case** | Neural network explanations |
-
-DeepSHAP combines SHAP with DeepLIFT to efficiently explain neural network predictions. It propagates contributions through the network layers using modified backpropagation rules.
+| **Complexity** | O(layers × neurons × background samples) |
+| **Background data** | Required |
+| **Local accuracy** | Approximately satisfied |
 
 **When to use:**
 
-- Deep neural networks
-- Need efficient explanations for large networks
-- Image/text model explanations
+- Deep neural networks in ONNX format
+- Need efficient explanations for dense networks
+- Model uses Dense, ReLU, Sigmoid, Tanh, or Softmax layers
+
+**When NOT to use:**
+
+- Convolutional networks (not yet supported)
+- Tree models (use TreeSHAP)
+- Linear models (use LinearSHAP)
+- Need exact SHAP values (use ExactSHAP or PermutationSHAP)
+
+[DeepSHAP Guide →](deepshap.md)
 
 ---
 
 ### GradientSHAP
 
-**For:** Differentiable models where gradients are available.
+**Best for:** Differentiable models using numerical gradients.
+
+```go
+exp, _ := gradient.New(model, background,
+    []explainer.Option{
+        explainer.WithNumSamples(300),
+    },
+)
+```
 
 | Property | Value |
 |----------|-------|
 | **Accuracy** | Approximate (expected gradients) |
-| **Complexity** | O(samples × backward pass) |
-| **Use case** | Neural networks, differentiable models |
-
-GradientSHAP uses expected gradients (integrated gradients + noise) to estimate SHAP values. It connects SHAP to gradient-based attribution methods.
+| **Complexity** | O(samples × features × 2) |
+| **Background data** | Required |
+| **Local accuracy** | Approximately satisfied |
 
 **When to use:**
 
-- Differentiable models
-- You have access to gradients
-- Image classification explanations
+- Differentiable models (neural networks, polynomial models)
+- You want lower variance than pure sampling methods
+- Confidence intervals are needed
+- Model-agnostic explanations with gradient awareness
+
+**When NOT to use:**
+
+- Tree models (use TreeSHAP)
+- Linear models (use LinearSHAP)
+- Non-differentiable models (use KernelSHAP)
+- Need guaranteed exact values (use ExactSHAP or PermutationSHAP)
+
+[GradientSHAP Guide →](gradientshap.md)
 
 ---
 
 ### PartitionSHAP
 
-**For:** Structured data with feature hierarchies or correlations.
+**Best for:** Structured data with feature hierarchies or natural groupings.
+
+```go
+hierarchy := &partition.Node{
+    Name: "root",
+    Children: []*partition.Node{
+        {Name: "demographics", Children: []*partition.Node{
+            {Name: "age", FeatureIdx: 0},
+            {Name: "gender", FeatureIdx: 1},
+        }},
+        {Name: "financials", Children: []*partition.Node{
+            {Name: "income", FeatureIdx: 2},
+        }},
+    },
+}
+exp, _ := partition.New(model, background, hierarchy)
+```
 
 | Property | Value |
 |----------|-------|
-| **Accuracy** | Approximate |
-| **Complexity** | O(partitions × model calls) |
-| **Use case** | Correlated features, feature groups |
-
-PartitionSHAP uses hierarchical clustering to group correlated features, computing SHAP values for feature groups first, then attributing within groups. This is faster for high-dimensional data with known structure.
+| **Accuracy** | Approximate (Owen values) |
+| **Complexity** | O(k! × samples × depth) |
+| **Background data** | Required |
+| **Local accuracy** | Approximately satisfied |
 
 **When to use:**
 
-- Many correlated features
-- Natural feature groupings (e.g., one-hot encoded categories)
-- High-dimensional data (>100 features)
+- Features have natural groupings (demographics, financials, etc.)
+- Feature correlations within groups are stronger than between groups
+- You want hierarchical explanations
+- Domain knowledge suggests feature organization
+
+**When NOT to use:**
+
+- No clear feature groupings exist
+- Tree models (use TreeSHAP)
+- Linear models (use LinearSHAP)
+- Need exact values (use ExactSHAP)
+
+[PartitionSHAP Guide →](partitionshap.md)
 
 ---
 
@@ -318,23 +409,29 @@ PartitionSHAP uses hierarchical clustering to group correlated features, computi
 |-----------|----------|-------|
 | TreeSHAP | ★★★★★ Exact | ★★★★★ Very Fast |
 | LinearSHAP | ★★★★★ Exact | ★★★★★ Fastest |
+| AdditiveSHAP | ★★★★★ Exact | ★★★★★ Very Fast |
 | PermutationSHAP | ★★★★★ Exact | ★★☆☆☆ Slow |
 | KernelSHAP | ★★★★☆ Good | ★★★☆☆ Medium |
 | SamplingSHAP | ★★★☆☆ Approximate | ★★★★☆ Fast |
 | ExactSHAP | ★★★★★ Exact | ★☆☆☆☆ Very Slow |
+| DeepSHAP | ★★★★☆ Good | ★★★★☆ Fast |
+| GradientSHAP | ★★★★☆ Good | ★★★★☆ Fast |
+| PartitionSHAP | ★★★★☆ Good | ★★★★☆ Fast |
 
 ### Model Compatibility
 
-| Explainer | Trees | Linear | Neural Nets | Black-box |
-|-----------|-------|--------|-------------|-----------|
-| TreeSHAP | ✅ | ❌ | ❌ | ❌ |
-| LinearSHAP | ❌ | ✅ | ❌ | ❌ |
-| PermutationSHAP | ✅ | ✅ | ✅ | ✅ |
-| KernelSHAP | ✅ | ✅ | ✅ | ✅ |
-| SamplingSHAP | ✅ | ✅ | ✅ | ✅ |
-| ExactSHAP | ✅* | ✅* | ✅* | ✅* |
-| DeepSHAP | ❌ | ❌ | ✅ | ❌ |
-| GradientSHAP | ❌ | ❌ | ✅ | ❌ |
+| Explainer | Trees | Linear | GAMs | Neural Nets | Black-box |
+|-----------|-------|--------|------|-------------|-----------|
+| TreeSHAP | ✅ | ❌ | ❌ | ❌ | ❌ |
+| LinearSHAP | ❌ | ✅ | ❌ | ❌ | ❌ |
+| AdditiveSHAP | ❌ | ✅ | ✅ | ❌ | ❌ |
+| PermutationSHAP | ✅ | ✅ | ✅ | ✅ | ✅ |
+| KernelSHAP | ✅ | ✅ | ✅ | ✅ | ✅ |
+| SamplingSHAP | ✅ | ✅ | ✅ | ✅ | ✅ |
+| ExactSHAP | ✅* | ✅* | ✅* | ✅* | ✅* |
+| DeepSHAP | ❌ | ❌ | ❌ | ✅ | ❌ |
+| GradientSHAP | ❌ | ✅ | ✅ | ✅ | ❌ |
+| PartitionSHAP | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 *ExactSHAP: Limited to ≤15 features due to O(2^n) complexity
 
@@ -380,7 +477,8 @@ exp, _ := explainer.New(model, background,
 
 1. **Tree model?** → TreeSHAP (exact, fast)
 2. **Linear model?** → LinearSHAP (exact, fastest)
-3. **Other model + need audit trail?** → PermutationSHAP (guaranteed local accuracy)
+3. **Additive/GAM model?** → AdditiveSHAP (exact, fast)
+4. **Other model + need audit trail?** → PermutationSHAP (guaranteed local accuracy)
 
 ### Exploration/Prototyping
 

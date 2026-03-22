@@ -194,6 +194,70 @@ data, _ := os.ReadFile("ensemble.json")
 loaded, _ := tree.EnsembleFromJSON(data)
 ```
 
+## Interaction Values
+
+TreeSHAP can compute pairwise feature interactions, which reveal how features work together to influence predictions. The interaction matrix is symmetric and satisfies key SHAP properties.
+
+### Computing Interactions
+
+```go
+// Compute SHAP interaction values
+result, err := exp.ExplainInteractions(ctx, instance)
+if err != nil {
+    log.Fatal(err)
+}
+
+fmt.Printf("Prediction: %.4f\n", result.Prediction)
+fmt.Printf("Base Value: %.4f\n", result.BaseValue)
+```
+
+### Interaction Matrix Properties
+
+The interaction matrix `Φ` has these properties:
+
+- **Diagonal** `Φ[i][i]`: Main effect of feature i
+- **Off-diagonal** `Φ[i][j]`: Interaction between features i and j
+- **Symmetric**: `Φ[i][j] == Φ[j][i]`
+- **Rows sum to SHAP**: `sum(Φ[i][:]) == SHAP[i]`
+- **Total sum**: `sum(all Φ) == prediction - base_value`
+
+### Working with Interactions
+
+```go
+// Get interaction between two features
+interaction := result.GetInteraction(0, 1)
+
+// Get main effect (diagonal)
+mainEffect := result.GetMainEffect(0)
+
+// Get derived SHAP value (row sum)
+shapValue := result.GetSHAPValue(0)
+
+// Get top k strongest interactions (by absolute value)
+topK := result.TopInteractions(5)
+for _, inter := range topK {
+    fmt.Printf("%s <-> %s: %.4f\n", inter.Name1, inter.Name2, inter.Value)
+}
+```
+
+### When to Use Interactions
+
+Interaction values are useful when:
+
+- **Understanding feature synergies**: Which features amplify each other's effects?
+- **Model debugging**: Identify unexpected feature dependencies
+- **Feature engineering**: Discover features that should be combined
+- **Regulatory compliance**: Explain complex model behavior
+
+### Complexity
+
+Computing interactions is more expensive than regular SHAP values:
+
+- **Regular TreeSHAP**: O(TLD²)
+- **TreeSHAP Interactions**: O(TLD² × D) where D is the number of features
+
+For large feature sets, consider computing interactions only for instances of interest.
+
 ## Algorithm Details
 
 TreeSHAP uses a path-based algorithm that:
