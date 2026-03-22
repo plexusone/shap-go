@@ -66,9 +66,9 @@ SHAP-Go provides a Go-native implementation of SHAP value computation for explai
 |----------|----------------------|
 | **Tree-based models (XGBoost, LightGBM)** | **TreeSHAP** ✅ |
 | **Linear/logistic regression** | **LinearSHAP** ✅ |
-| Any model, need guaranteed accuracy | PermutationSHAP |
+| Any model, need guaranteed accuracy | **PermutationSHAP** ✅ |
 | Any model, weighted regression baseline | **KernelSHAP** ✅ |
-| Any model, quick estimates | SamplingSHAP |
+| Any model, quick estimates | **SamplingSHAP** ✅ |
 | Small feature sets (≤15 features) | **ExactSHAP** ✅ |
 | Deep learning models (ONNX) | **DeepSHAP** ✅ |
 | Differentiable models, gradient-based | **GradientSHAP** ✅ |
