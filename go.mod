@@ -12,7 +12,7 @@ require (
 require (
 	github.com/apache/arrow/go/arrow v0.0.0-20211112161151-bc219186db40 // indirect
 	github.com/chewxy/hm v1.0.0 // indirect
-	github.com/chewxy/math32 v1.11.1 // indirect
+	github.com/chewxy/math32 v1.11.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/flatbuffers v25.12.19+incompatible // indirect
