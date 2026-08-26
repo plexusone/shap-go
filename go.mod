@@ -1,10 +1,10 @@
 module github.com/plexusone/shap-go
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/advancedclimatesystems/gonnx v1.1.0
-	github.com/grokify/gocharts/v2 v2.27.0
+	github.com/grokify/gocharts/v2 v2.27.1
 	github.com/yalue/onnxruntime_go v1.35.0
 	google.golang.org/protobuf v1.36.12
 )
